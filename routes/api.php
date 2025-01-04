@@ -21,6 +21,8 @@ Route::post('/getLVApprHistory', [LeaveController::class, 'getApprHistory']);
 Route::post('/getLVAppInq', [LeaveController::class, 'getAppInq']);
 Route::post('/getLVAppHistory', [LeaveController::class, 'getAppHistory']);
 Route::post('/upsertLV', [LeaveController::class, 'upsert']);
+Route::post('/approvalLV', [LeaveController::class, 'approval']);
+
 
 
 Route::post('/getOTApprInq', [OvertimeController::class, 'getApprInq']);
@@ -28,6 +30,7 @@ Route::post('/getOTApprHistory', [OvertimeController::class, 'getApprHistory']);
 Route::post('/getOTAppInq', [OvertimeController::class, 'getAppInq']);
 Route::post('/getOTAppHistory', [OvertimeController::class, 'getAppHistory']);
 Route::post('/upsertOT', [OvertimeController::class, 'upsert']);
+
 
 
 Route::post('/getOBApprInq', [OfficialBusinessController::class, 'getApprInq']);
