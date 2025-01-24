@@ -2,6 +2,7 @@
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\OfficialBusinessController;
+use App\Http\Controllers\DashBoardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+Route::post('/dashBoard', [DashBoardController::class, 'index']);
+
 
 Route::post('/getLVApprInq', [LeaveController::class, 'getApprInq']);
 Route::post('/getLVApprHistory', [LeaveController::class, 'getApprHistory']);
@@ -30,6 +33,7 @@ Route::post('/getOTApprHistory', [OvertimeController::class, 'getApprHistory']);
 Route::post('/getOTAppInq', [OvertimeController::class, 'getAppInq']);
 Route::post('/getOTAppHistory', [OvertimeController::class, 'getAppHistory']);
 Route::post('/upsertOT', [OvertimeController::class, 'upsert']);
+Route::post('/approvalOT', [OvertimeController::class, 'approval']);
 
 
 
@@ -38,6 +42,8 @@ Route::post('/getOBApprHistory', [OfficialBusinessController::class, 'getApprHis
 Route::post('/getOBAppInq', [OfficialBusinessController::class, 'getAppInq']);
 Route::post('/getOBAppHistory', [OfficialBusinessController::class, 'getAppHistory']);
 Route::post('/upsertOB', [OfficialBusinessController::class, 'upsert']);
+Route::post('/approvalOB', [OfficialBusinessController::class, 'approval']);
+
 
 
 
