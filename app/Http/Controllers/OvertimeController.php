@@ -82,15 +82,6 @@ public function getApprHistory(Request $request) {
 
 
 
-
-
-
-
-
-
-
-
-
 // ** OT Application Inquiry Current
 public function getAppInq(Request $request) {
 
@@ -121,14 +112,6 @@ public function getAppInq(Request $request) {
 
 
 }
-
-
-
-
-
-
-
-
 
 
 
@@ -166,47 +149,27 @@ public function getAppHistory(Request $request) {
 }
 
 
-
-
-
 public function upsert(Request $request)
-{
-    try {
-        $request->validate([
-            'json_data' => 'required|json',
-        ]);
+    {
+        try {
+            $data = $request->json('json_data');
+            $empNo = $data['empNo'] ?? null;
+            $details = $data['detail'] ?? [];
 
-        $params = $request->get('json_data');
+            if (!$empNo || empty($details)) {
+                return response()->json(['status' => 'error', 'message' => 'Invalid data provided'], 400);
+            }
 
-      
+            $jsonParams = json_encode(['json_data' => $data]);
+            
+            DB::statement("EXEC sproc_PHP_EmpInq_Overtime @mode = 'upsert', @params = ?", [$jsonParams]);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Invalid JSON data provided.',
-            ], 400);
+            return response()->json(['status' => 'success', 'message' => 'Overtime application submitted successfully']);
+        } catch (\Exception $e) {
+            Log::error('Error in upsertLV: ' . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => 'An error occurred while processing the request'], 500);
         }
-
-
-        DB::statement('EXEC sproc_PHP_EmpInq_Overtime @params = :json_data, @mode = :mode', [
-            'json_data' => $params,
-            'mode' => 'upsert'
-        ]);
-
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Transaction saved successfully.',
-        ], 200);
-    } catch (\Exception $e) {
-        Log::error('Transaction save failed:', ['error' => $e->getMessage()]);
-
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Failed to save transaction: ' . $e->getMessage(),
-        ], 500);
     }
-}
 
 
 

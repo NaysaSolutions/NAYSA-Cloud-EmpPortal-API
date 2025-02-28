@@ -3,9 +3,7 @@ use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\OfficialBusinessController;
 use App\Http\Controllers\DashBoardController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -16,7 +14,10 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+
 Route::post('/dashBoard', [DashBoardController::class, 'index']);
+Route::post('/getDTR', [DashBoardController::class, 'getDTR']);
 
 
 Route::post('/getLVApprInq', [LeaveController::class, 'getApprInq']);
@@ -32,7 +33,7 @@ Route::post('/getOTApprInq', [OvertimeController::class, 'getApprInq']);
 Route::post('/getOTApprHistory', [OvertimeController::class, 'getApprHistory']);
 Route::post('/getOTAppInq', [OvertimeController::class, 'getAppInq']);
 Route::post('/getOTAppHistory', [OvertimeController::class, 'getAppHistory']);
-Route::post('/upsertOT', [OvertimeController::class, 'upsert']);
+Route::post('/OTupsert', [OvertimeController::class, 'upsert']);
 Route::post('/approvalOT', [OvertimeController::class, 'approval']);
 
 

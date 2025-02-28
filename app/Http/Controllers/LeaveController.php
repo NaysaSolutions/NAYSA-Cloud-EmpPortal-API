@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class LeaveController extends Controller
 {
@@ -78,16 +79,6 @@ public function getApprHistory(Request $request) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
 // ** Leave Application Inquiry Current
 public function getAppInq(Request $request) {
 
@@ -118,15 +109,6 @@ public function getAppInq(Request $request) {
 
 
 }
-
-
-
-
-
-
-
-
-
 
 
  // ** Leave Application Inquiry History
@@ -163,102 +145,70 @@ public function getAppHistory(Request $request) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
 public function upsert(Request $request)
-{
-    try {
-        $request->validate([
-            'json_data' => 'required|json',
-        ]);
+    {
+        try {
+            $data = $request->json('json_data');
+            $empNo = $data['empNo'] ?? null;
+            $details = $data['detail'] ?? [];
 
-        $params = $request->get('json_data');
+            if (!$empNo || empty($details)) {
+                return response()->json(['status' => 'error', 'message' => 'Invalid data provided'], 400);
+            }
 
-      
+            $jsonParams = json_encode(['json_data' => $data]);
+            
+            DB::statement("EXEC sproc_PHP_EmpInq_Leave @mode = 'upsert', @params = ?", [$jsonParams]);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
+            return response()->json(['status' => 'success', 'message' => 'Leave application submitted successfully']);
+        } catch (\Exception $e) {
+            Log::error('Error in upsertLV: ' . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => 'An error occurred while processing the request'], 500);
+        }
+    }
+
+    public function approval(Request $request)
+    {
+        try {
+            // Validate that json_data is a required string
+            $request->validate([
+                'json_data' => 'required|string',
+            ]);
+    
+            // Decode the JSON string
+            $jsonString = $request->input('json_data');
+            $data = json_decode($jsonString, true);
+    
+            // Check if decoding was successful and contains 'json_data'
+            if (json_last_error() !== JSON_ERROR_NONE || !isset($data['json_data'])) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid JSON data format.',
+                ], 400);
+            }
+    
+            // Convert json_data to a JSON string for SQL execution
+            $jsonParams = json_encode($data['json_data']);
+    
+            // Log the formatted data for debugging
+            Log::info('Approval request sent:', ['json_data' => $jsonParams]);
+    
+            // Execute the stored procedure
+            DB::statement("EXEC sproc_PHP_EmpInq_Leave @mode = 'Approval', @params = ?", [$jsonParams]);
+    
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Leave approval processed successfully',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in approval process:', ['error' => $e->getMessage()]);
+    
             return response()->json([
                 'status' => 'error',
-                'message' => 'Invalid JSON data provided.',
-            ], 400);
+                'message' => 'Failed to process approval: ' . $e->getMessage(),
+            ], 500);
         }
-
-
-        DB::statement('EXEC sproc_PHP_EmpInq_Leave @params = :json_data, @mode = :mode', [
-            'json_data' => $params,
-            'mode' => 'upsert'
-        ]);
-
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Transaction saved successfully.',
-        ], 200);
-    } catch (\Exception $e) {
-        Log::error('Transaction save failed:', ['error' => $e->getMessage()]);
-
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Failed to save transaction: ' . $e->getMessage(),
-        ], 500);
     }
-}
-
-
-
-
-
-
-
-
-public function approval(Request $request)
-{
-    try {
-        $request->validate([
-            'json_data' => 'required|json',
-        ]);
-
-        $params = $request->get('json_data');
-
-      
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Invalid JSON data provided.',
-            ], 400);
-        }
-
-
-        DB::statement('EXEC sproc_PHP_EmpInq_Leave @params = :json_data, @mode = :mode', [
-            'json_data' => $params,
-            'mode' => 'approval'
-        ]);
-
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Transaction saved successfully.',
-        ], 200);
-    } catch (\Exception $e) {
-        Log::error('Transaction save failed:', ['error' => $e->getMessage()]);
-
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Failed to save transaction: ' . $e->getMessage(),
-        ], 500);
-    }
-}
-
-
+    
 
 };
