@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
-
 class OfficialBusinessController extends Controller
 {
     
@@ -169,41 +168,25 @@ public function getAppHistory(Request $request) {
 
 
 public function upsert(Request $request)
+
 // {
 //     try {
-//         $request->validate([
-//             'json_data' => 'required|json',
-//         ]);
+//         $data = $request->json('json_data');
+//         $empNo = $data['empNo'] ?? null;
+//         $details = $data['detail'] ?? [];
 
-//         $params = $request->get('json_data');
-
-      
-
-//         if (json_last_error() !== JSON_ERROR_NONE) {
-//             return response()->json([
-//                 'status' => 'error',
-//                 'message' => 'Invalid JSON data provided.',
-//             ], 400);
+//         if (!$empNo || empty($details)) {
+//             return response()->json(['status' => 'error', 'message' => 'Invalid data provided'], 400);
 //         }
 
+//         $jsonParams = json_encode(['json_data' => $data]);
+        
+//         DB::statement("EXEC sproc_PHP_EmpInq_OfficialBusiness @mode = 'upsert', @params = ?", [$jsonParams]);
 
-//         DB::statement('EXEC sproc_PHP_EmpInq_OfficialBusiness @params = :json_data, @mode = :mode', [
-//             'json_data' => $params,
-//             'mode' => 'upsert'
-//         ]);
-
-
-//         return response()->json([
-//             'status' => 'success',
-//             'message' => 'Transaction saved successfully.',
-//         ], 200);
+//         return response()->json(['status' => 'success', 'message' => 'Official Business application submitted successfully']);
 //     } catch (\Exception $e) {
-//         Log::error('Transaction save failed:', ['error' => $e->getMessage()]);
-
-//         return response()->json([
-//             'status' => 'error',
-//             'message' => 'Failed to save transaction: ' . $e->getMessage(),
-//         ], 500);
+//         Log::error('Error in upsertOB: ' . $e->getMessage());
+//         return response()->json(['status' => 'error', 'message' => 'An error occurred while processing the request'], 500);
 //     }
 // }
 
