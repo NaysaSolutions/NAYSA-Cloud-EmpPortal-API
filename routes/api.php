@@ -3,6 +3,7 @@ use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\OfficialBusinessController;
 use App\Http\Controllers\DashBoardController;
+use App\Http\Controllers\RegisterController;
 use Illuminate\Support\Facades\Route;
 /*
 |--------------------------------------------------------------------------
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::post('/dashBoard', [DashBoardController::class, 'index']);
+Route::post('/regEmp', [RegisterController::class, 'regEmp']);
 Route::post('/getDTR', [DashBoardController::class, 'getDTR']);
 
 
