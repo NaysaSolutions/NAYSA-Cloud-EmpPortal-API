@@ -81,7 +81,7 @@ return [
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST', 'ANJ-PC'),
+            'host' => env('DB_HOST', 'NAYSA-GERARD\SQLEXPRESS02'),
             'port' => env('DB_PORT', '1433'),
             'database' => env('DB_DATABASE', 'HRPAY'),
             'username' => env('DB_USERNAME', 'NAYSACon'),

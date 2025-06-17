@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/dashBoard', [DashBoardController::class, 'index']);
 Route::post('/regEmp', [RegisterController::class, 'regEmp']);
+Route::post('/loginEmp', [RegisterController::class, 'loginEmp']);
 Route::post('/getDTR', [DashBoardController::class, 'getDTR']);
 
 
@@ -47,6 +48,13 @@ Route::post('/getOBAppHistory', [OfficialBusinessController::class, 'getAppHisto
 Route::post('/upsertOB', [OfficialBusinessController::class, 'upsert']);
 Route::post('/approvalOB', [OfficialBusinessController::class, 'approval']);
 
+
+
+use Illuminate\Support\Facades\DB;
+
+Route::get('/check-db-host', function () {
+    return DB::connection()->getConfig('host');
+});
 
 
 

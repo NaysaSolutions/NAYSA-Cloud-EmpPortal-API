@@ -81,15 +81,6 @@ public function getApprHistory(Request $request) {
 
 
 
-
-
-
-
-
-
-
-
-
 // ** OB Application Inquiry Current
 public function getAppInq(Request $request) {
 

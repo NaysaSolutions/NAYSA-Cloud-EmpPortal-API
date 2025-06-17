@@ -41,65 +41,46 @@ class DashBoardController extends Controller
 //     }
 // }
 
-public function index(Request $request) {
-
+public function index(Request $request)
+{
     $request->validate([
-        'EMP_NO' => 'required|string',
-        'EMP_PASS' => 'required|string',
+        'EMP_NO' => 'required|string'
     ]);
 
-    $employee_no = $request->input('EMP_NO');
-    $employee_pass = $request->input('EMP_PASS');
+    $employeeNo = $request->input('EMP_NO');
 
     try {
-        $results = DB::select(
-            'EXEC sproc_PHP_EmpInq_SummInfo @emp = ?',
-            [$employee_no] 
-        );
+        // Call stored procedure with only EMP_NO
+        $results = DB::select('EXEC sproc_PHP_EmpInq_SummInfo @emp = ?', [$employeeNo]);
 
-        if (empty($results)) {
+        if (empty($results) || empty($results[0]->result)) {
             return response()->json([
                 'success' => false,
                 'message' => 'No user data found.',
             ], 404);
         }
 
-        $userData = json_decode($results[0]->result ?? '[]', true);
+        $userData = json_decode($results[0]->result, true);
 
-        if (!empty($userData)) {
-            $storedEncryptedPassword = $userData[0]['askapp_pw'];
-
-            // 🔐 Decrypt the stored password (AES-256-CBC example)
-            $key = env('LOGIN_ENCRYPTION_KEY'); // 32 bytes (256-bit)
-            $iv = env('LOGIN_ENCRYPTION_IV');   // 16 bytes (128-bit)
-
-            $decryptedPassword = openssl_decrypt(
-                base64_decode($storedEncryptedPassword),
-                'AES-256-CBC',
-                $key,
-                OPENSSL_RAW_DATA,
-                $iv
-            );
-
-            if ($employee_pass === $decryptedPassword) {
-                return response()->json([
-                    'success' => true,
-                    'data' => $results,
-                ], 200);
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Incorrect password.',
-                ], 401);
-            }
-        } else {
+        if (empty($userData)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Employee not found.',
+                'message' => 'Invalid or missing user data.',
             ], 404);
         }
+
+        // No password decryption or check
+
+        return response()->json([
+            'success' => true,
+            'data' => $userData,
+        ], 200);
+
     } catch (\Exception $e) {
-        Log::error('Login error: ' . $e->getMessage());
+        Log::error('Employee lookup error', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
 
         return response()->json([
             'success' => false,
@@ -107,6 +88,8 @@ public function index(Request $request) {
         ], 500);
     }
 }
+
+
 
 
 public function getDTR(Request $request) {
