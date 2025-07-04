@@ -30,7 +30,7 @@ class RegisterController extends Controller
 
         try {
             // Call the stored procedure with a single JSON parameter
-            $result = DB::select('EXEC HRPAY.dbo.sproc_PHP_EmpRegister ?', [$jsonData]);
+            $result = DB::select('EXEC sproc_PHP_EmpRegister ?', [$jsonData]);
 
             return response()->json([
                 'status' => $result[0]->status ?? 'Failed'
