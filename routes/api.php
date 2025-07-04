@@ -49,6 +49,10 @@ Route::post('/upsertOB', [OfficialBusinessController::class, 'upsert']);
 Route::post('/approvalOB', [OfficialBusinessController::class, 'approval']);
 
 
+// routes/api.php
+Route::get('/reports/payslip', [App\Http\Controllers\ReportController::class, 'payslipReport']);
+
+
 
 use Illuminate\Support\Facades\DB;
 
