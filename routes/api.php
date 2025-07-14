@@ -51,6 +51,10 @@ Route::post('/approvalOB', [OfficialBusinessController::class, 'approval']);
 
 // routes/api.php
 Route::get('/reports/payslip', [App\Http\Controllers\ReportController::class, 'payslipReport']);
+Route::get('/reports/payslipLV', [App\Http\Controllers\ReportController::class, 'payslipReport_LV']);
+Route::get('/reports/payslipLN', [App\Http\Controllers\ReportController::class, 'payslipReport_LN']);
+Route::get('/reports/payslipYTD', [App\Http\Controllers\ReportController::class, 'payslipReport_YTD']);
+Route::get('/reports/payslipCutoff', [App\Http\Controllers\ReportController::class, 'payslipReport_Cutoff']);
 
 
 
