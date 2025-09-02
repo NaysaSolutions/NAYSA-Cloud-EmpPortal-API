@@ -82,7 +82,7 @@ class ReportController extends Controller
     $emplvInfo = DB::table('Vw_vbnet_Rpt_LVBal')
         ->where('EMPNO', $empno)
         ->where('CUT_OFF', $cutoff)
-        ->select('LV_TYPE', 'AVAILED_HRS', 'ENDBAL_HRS')
+        ->select('LV_TYPE', 'AVAILED_HRS', 'ENDBAL_HRS', 'AVAILED', 'ENDBAL')
         ->orderBy('LV_TYPE')
         ->get();
 

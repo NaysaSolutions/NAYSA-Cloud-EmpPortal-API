@@ -83,7 +83,7 @@ return [
             'url' => env('DATABASE_URL'),
             'host' => env('DB_HOST', 'ANJ-PC'),
             'port' => env('DB_PORT', '1433'),
-            'database' => env('DB_DATABASE', 'HRPAY_NEMAR'),
+            'database' => env('DB_DATABASE', 'HRPAY_PORTAL'),
             'username' => env('DB_USERNAME', 'NAYSACon'),
             'password' => env('DB_PASSWORD', 'P@ssw0rd'),
             'charset' => 'utf8',

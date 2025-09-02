@@ -4,6 +4,7 @@ use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\OfficialBusinessController;
 use App\Http\Controllers\DashBoardController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\TimekeepingController;
 use Illuminate\Support\Facades\Route;
 /*
 |--------------------------------------------------------------------------
@@ -56,6 +57,17 @@ Route::get('/reports/payslipLN', [App\Http\Controllers\ReportController::class, 
 Route::get('/reports/payslipYTD', [App\Http\Controllers\ReportController::class, 'payslipReport_YTD']);
 Route::get('/reports/payslipCutoff', [App\Http\Controllers\ReportController::class, 'payslipReport_Cutoff']);
 
+
+Route::post('/upsertTimeIn', [TimekeepingController::class, 'upsertTimeIn']);
+Route::post('/saveImage', [TimekeepingController::class, 'saveImage']);
+Route::get('/getNewImageId', [TimekeepingController::class, 'getNewImageId']);
+// Route::get('/dtrRecords', [TimekeepingController::class, 'dtrRecords']);
+Route::get('/dtrRecords/{empNo}/{date?}', [TimekeepingController::class, 'getDTRRecords']);
+Route::get('/getDTRHistory', [TimekeepingController::class, 'getDTRHistory']);
+Route::get('/empBranchLocation/{empNo}', [TimekeepingController::class, 'getBranchLocation']);
+
+
+   
 
 
 use Illuminate\Support\Facades\DB;
