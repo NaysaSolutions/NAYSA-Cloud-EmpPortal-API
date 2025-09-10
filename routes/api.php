@@ -62,12 +62,12 @@ Route::post('/upsertTimeIn', [TimekeepingController::class, 'upsertTimeIn']);
 Route::post('/saveImage', [TimekeepingController::class, 'saveImage']);
 Route::get('/getNewImageId', [TimekeepingController::class, 'getNewImageId']);
 // Route::get('/dtrRecords', [TimekeepingController::class, 'dtrRecords']);
-Route::get('/dtrRecords/{empNo}/{date?}', [TimekeepingController::class, 'getDTRRecords']);
+// Route::get('/dtrRecords/{empNo}/{date?}', [TimekeepingController::class, 'getDTRRecords']);
+Route::get('/dtrRecords/{empNo}/{startDate}/{endDate}', [TimekeepingController::class, 'getDTRRecords']);
 Route::get('/getDTRHistory', [TimekeepingController::class, 'getDTRHistory']);
+// Route::get('/empBranchLocation/{empNo}', [TimekeepingController::class, 'getBranchLocation']);
+// Route::post('/empBranchLocation', [TimekeepingController::class, 'getBranchLocation']);
 Route::get('/empBranchLocation/{empNo}', [TimekeepingController::class, 'getBranchLocation']);
-
-
-   
 
 
 use Illuminate\Support\Facades\DB;

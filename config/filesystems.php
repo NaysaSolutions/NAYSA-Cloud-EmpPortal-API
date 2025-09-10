@@ -36,13 +36,30 @@ return [
             'throw' => false,
         ],
 
-        'public' => [
+        // 'public' => [
+        //     'driver' => 'local',
+        //     'root' => storage_path('app/public'),
+        //     'url' => env('APP_URL').'/storage',
+        //     'visibility' => 'public',
+        //     'throw' => false,
+        // ],
+
+        // 'public' => [
+        //     'driver' => 'local',
+        //     'root' => storage_path('storage/timekeeping_images'),
+        //     'url' => env('APP_URL').'/public',
+        //     'visibility' => 'public',
+        //     'throw' => false,
+        // ],
+
+         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            // Change the root to point to a folder within the 'public' directory
+            'root' => public_path('images'), 
+            'url' => env('APP_URL').'/images',
             'visibility' => 'public',
             'throw' => false,
-        ],
+    ],
 
         's3' => [
             'driver' => 's3',

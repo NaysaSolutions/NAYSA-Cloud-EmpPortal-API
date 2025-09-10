@@ -210,19 +210,19 @@ class TimekeepingController extends Controller
      * @param string|null $endDate The end date for a range (YYYY-MM-DD).
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getDTRRecords(Request $request, $empNo, $date = null)
+    public function getDTRRecords(Request $request, $empNo, $startDate, $endDate)
     {
         try {
-            $endDate = $request->query('endDate'); // Get endDate from query parameter
+            // $endDate = $request->query('endDate'); // Get endDate from query parameter
 
-            // If no date is provided, default to today's date
-            if (empty($date)) {
-                $date = now()->format('Y-m-d');
-            }
+            // // If no date is provided, default to today's date
+            // if (empty($date)) {
+            //     $date = now()->format('Y-m-d');
+            // }
 
             Log::info('Fetching DTR records.', [
                 'empNo' => $empNo,
-                'startDate' => $date,
+                'startDate' => $startDate,
                 'endDate' => $endDate
             ]);
 
@@ -236,7 +236,7 @@ class TimekeepingController extends Controller
                 @userid = ?,
                 @cutoff = ?,
                 @params = ?",
-                [$empNo, $date, auth()->user()->id ?? 'system', $endDate, null] // Pass endDate as @cutoff for flexibility
+                [$empNo, $startDate, auth()->user()->id ?? 'system', $endDate, null] // Pass endDate as @cutoff for flexibility
             );
 
             return response()->json([
@@ -250,7 +250,7 @@ class TimekeepingController extends Controller
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'empNo' => $empNo,
-                'date' => $date
+                'date' => $startDate
             ]);
             return response()->json([
                 'success' => false,
@@ -310,43 +310,47 @@ class TimekeepingController extends Controller
             ], 500);
         }
     }
+
 public function getBranchLocation(Request $request, $empNo)
 {
-    try {
-        // Your existing DB query code...
+try {
 
-        $records = DB::select("EXEC sproc_PHP_EmpInq_DTR
-            @mode = 'get_BranchLocation',
-            @stat = null,
-            @emp = ?,
-            @date = ?,
-            @userid = ?,
-            @cutoff = ?,
-            @params = ?",
-            [$empNo, $date, auth()->user()->id ?? 'system', $endDate, null]
-        );
-        
-        // Ensure there is a record and return the first one inside an array
-        $branchLocation = count($records) > 0 ? [$records[0]] : []; // 👈 Return a single item in an array
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Branch location fetched successfully.',
-            'records' => $branchLocation // 👈 Use the 'records' key
-        ]);
+        //  $empNo = $request->input('empNo');
 
-    } catch (\Exception $e) {
-        Log::error('Error fetching Employee Branch Location records:', [
-            'message' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-            'empNo' => $empNo
-        ]);
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to fetch branch location. Please try again later.',
-            'error_details' => $e->getMessage()
-        ], 500);
-    }
+            Log::info('Fetching DTR records.', [
+                'empNo' => $empNo,
+            ]);
+
+            $records = DB::select("EXEC sproc_PHP_EmpInq_DTR
+                @mode = 'get_BranchLocation',
+                @stat = null,
+                @emp = ?,
+                @date = ?,
+                @userid = ?,
+                @cutoff = ?,
+                @params = ?",
+                [$empNo, null, auth()->user()->id ?? 'system', null, null] // Pass endDate as @cutoff for flexibility
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'DTR records fetched successfully.',
+                'records' => $records
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching DTR records:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'empNo' => $empNo,
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch DTR records. Please try again later.',
+                'error_details' => $e->getMessage()
+            ], 500);
+        }
+
 }
 
 }
