@@ -58,16 +58,20 @@ Route::get('/reports/payslipYTD', [App\Http\Controllers\ReportController::class,
 Route::get('/reports/payslipCutoff', [App\Http\Controllers\ReportController::class, 'payslipReport_Cutoff']);
 
 
+
 Route::post('/upsertTimeIn', [TimekeepingController::class, 'upsertTimeIn']);
 Route::post('/saveImage', [TimekeepingController::class, 'saveImage']);
 Route::get('/getNewImageId', [TimekeepingController::class, 'getNewImageId']);
-// Route::get('/dtrRecords', [TimekeepingController::class, 'dtrRecords']);
-// Route::get('/dtrRecords/{empNo}/{date?}', [TimekeepingController::class, 'getDTRRecords']);
 Route::get('/dtrRecords/{empNo}/{startDate}/{endDate}', [TimekeepingController::class, 'getDTRRecords']);
 Route::get('/getDTRHistory', [TimekeepingController::class, 'getDTRHistory']);
-// Route::get('/empBranchLocation/{empNo}', [TimekeepingController::class, 'getBranchLocation']);
-// Route::post('/empBranchLocation', [TimekeepingController::class, 'getBranchLocation']);
 Route::get('/empBranchLocation/{empNo}', [TimekeepingController::class, 'getBranchLocation']);
+
+Route::post('/getDTRApprInq', [TimekeepingController::class, 'getApprInq']);
+Route::post('/getDTRApprHistory', [TimekeepingController::class, 'getApprHistory']);
+Route::post('/getDTRAppInq', [TimekeepingController::class, 'getAppInq']);
+Route::post('/getDTRAppHistory', [TimekeepingController::class, 'getAppHistory']);
+Route::post('/upsertDTR', [TimekeepingController::class, 'upsert']);
+Route::post('/approvalDTR', [TimekeepingController::class, 'approval']);
 
 
 use Illuminate\Support\Facades\DB;
