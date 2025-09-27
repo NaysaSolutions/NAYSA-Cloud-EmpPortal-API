@@ -167,6 +167,7 @@ public function upsert(Request $request)
         }
     }
 
+
     public function approval(Request $request)
     {
         try {
@@ -210,5 +211,73 @@ public function upsert(Request $request)
         }
     }
     
+
+// ** Leave Types
+public function leaveTypes(Request $request) {
+
+    $request->validate([
+        'EMP_NO' => 'required|string',
+    ]);
+
+    $employee_no = $request->input('EMP_NO');
+
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_EmpInq_Leave @mode = ?, @emp =?',
+            ['leaveTypes', $employee_no]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+
+}
+
+
+public function cancel(Request $request)
+{
+    try {
+        // accept from json body or form urlencoded just in case
+        $payload = $request->input('json_data', $request->json('json_data'));
+
+        $empNo   = $payload['empNo']   ?? null;
+        $stamp   = $payload['lvStamp'] ?? null;
+
+        if (!$empNo || !$stamp) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'empNo and Stamp are required'
+            ], 400);
+        }
+
+        $jsonParams = json_encode([
+            'empNo'   => $empNo,
+            'lvStamp' => $stamp,
+        ], JSON_UNESCAPED_SLASHES);
+
+        // EXEC sproc_PHP_EmpInq_Overtime @mode='Cancel', @params='{"empNo":"...","otStamp":"..."}'
+        DB::statement("EXEC sproc_PHP_EmpInq_Leave @mode = 'Cancel', @params = ?", [$jsonParams]);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Leave cancelled successfully'
+        ]);
+    } catch (\Throwable $e) {
+        Log::error('Error in cancelLeave: '.$e->getMessage());
+        return response()->json([
+            'status'  => 'error',
+            'message' => 'An error occurred while processing the request'
+        ], 500);
+    }
+}
 
 };

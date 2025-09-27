@@ -30,6 +30,10 @@ Route::post('/getLVAppInq', [LeaveController::class, 'getAppInq']);
 Route::post('/getLVAppHistory', [LeaveController::class, 'getAppHistory']);
 Route::post('/upsertLV', [LeaveController::class, 'upsert']);
 Route::post('/approvalLV', [LeaveController::class, 'approval']);
+Route::post('/leaveTypes', [LeaveController::class, 'leaveTypes']);
+Route::post('/cancelLV', [LeaveController::class, 'cancel']);
+
+
 
 
 
@@ -39,6 +43,7 @@ Route::post('/getOTAppInq', [OvertimeController::class, 'getAppInq']);
 Route::post('/getOTAppHistory', [OvertimeController::class, 'getAppHistory']);
 Route::post('/OTupsert', [OvertimeController::class, 'upsert']);
 Route::post('/approvalOT', [OvertimeController::class, 'approval']);
+Route::post('/cancelOT', [OvertimeController::class, 'cancel']);
 
 
 
@@ -48,6 +53,7 @@ Route::post('/getOBAppInq', [OfficialBusinessController::class, 'getAppInq']);
 Route::post('/getOBAppHistory', [OfficialBusinessController::class, 'getAppHistory']);
 Route::post('/upsertOB', [OfficialBusinessController::class, 'upsert']);
 Route::post('/approvalOB', [OfficialBusinessController::class, 'approval']);
+Route::post('/cancelOB', [OfficialBusinessController::class, 'cancel']);
 
 
 // routes/api.php
@@ -72,6 +78,7 @@ Route::post('/getDTRAppInq', [TimekeepingController::class, 'getAppInq']);
 Route::post('/getDTRAppHistory', [TimekeepingController::class, 'getAppHistory']);
 Route::post('/upsertDTR', [TimekeepingController::class, 'upsert']);
 Route::post('/approvalDTR', [TimekeepingController::class, 'approval']);
+Route::post('/cancelDTR', [TimekeepingController::class, 'cancel']);
 
 
 use Illuminate\Support\Facades\DB;

@@ -287,4 +287,42 @@ public function approval(Request $request)
     }
 }
 
+
+public function cancel(Request $request)
+{
+    try {
+        // accept from json body or form urlencoded just in case
+        $payload = $request->input('json_data', $request->json('json_data'));
+
+        $empNo   = $payload['empNo']   ?? null;
+        $stamp   = $payload['obStamp'] ?? null;
+
+        if (!$empNo || !$stamp) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'empNo and Stamp are required'
+            ], 400);
+        }
+
+        $jsonParams = json_encode([
+            'empNo'   => $empNo,
+            'obStamp' => $stamp,
+        ], JSON_UNESCAPED_SLASHES);
+
+        // EXEC sproc_PHP_EmpInq_Overtime @mode='Cancel', @params='{"empNo":"...","otStamp":"..."}'
+        DB::statement("EXEC sproc_PHP_EmpInq_OfficialBusiness @mode = 'Cancel', @params = ?", [$jsonParams]);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Official Business cancelled successfully'
+        ]);
+    } catch (\Throwable $e) {
+        Log::error('Error in cancelOfficialBusiness: '.$e->getMessage());
+        return response()->json([
+            'status'  => 'error',
+            'message' => 'An error occurred while processing the request'
+        ], 500);
+    }
+}
+
 };
