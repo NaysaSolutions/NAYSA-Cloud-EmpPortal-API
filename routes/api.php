@@ -80,6 +80,8 @@ Route::post('/upsertDTR', [TimekeepingController::class, 'upsert']);
 Route::post('/approvalDTR', [TimekeepingController::class, 'approval']);
 Route::post('/cancelDTR', [TimekeepingController::class, 'cancel']);
 
+Route::post('/dtr/confirm', [TimekeepingController::class, 'confirmDTR']);
+
 
 use Illuminate\Support\Facades\DB;
 

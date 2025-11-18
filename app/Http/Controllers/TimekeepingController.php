@@ -624,4 +624,59 @@ public function cancel(Request $request)
     }
 }
 
+public function confirmDTR(Request $request)
+    {
+        $request->validate([
+            'empNo'     => 'required|string',
+            'startDate' => 'required|date',
+            'endDate'   => 'required|date',
+        ]);
+
+        $empNo     = $request->input('empNo');
+        $startDate = $request->input('startDate');
+        $endDate   = $request->input('endDate');
+
+        // user id for audit trail
+        $userId = auth()->user()->empno ?? auth()->user()->userid ?? 'SYSTEM';
+
+        try {
+            // Call your SPROC with the new mode
+            $rows = DB::select("
+                EXEC sproc_PHP_EmpInq_DTR
+                    @mode      = :mode,
+                    @stat      = NULL,
+                    @emp       = :emp,
+                    @startdate = :startdate,
+                    @enddate   = :enddate,
+                    @date      = NULL,
+                    @userid    = :userid,
+                    @cutoff    = NULL,
+                    @params    = NULL
+            ", [
+                'mode'      => 'ConfirmDTR',
+                'emp'       => $empNo,
+                'startdate' => $startDate,
+                'enddate'   => $endDate,
+                'userid'    => $userId,
+            ]);
+
+            // SPROC returns a single row with status/message
+            $result   = $rows[0] ?? null;
+            $status   = $result->status  ?? 'success';
+            $message  = $result->message ?? 'DTR successfully confirmed.';
+
+            return response()->json([
+                'success' => $status === 'success',
+                'status'  => $status,
+                'message' => $message,
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'status'  => 'error',
+                'message' => $th->getMessage(),
+            ], 500);
+        }
+    }
+
 }
