@@ -150,51 +150,89 @@ class TimekeepingController extends Controller
         $request->validate([
             'imageId' => 'required|string',
             'imageData' => 'required|string',
+            'branchCode' => 'nullable|string',
+            'empNo' => 'nullable|string',
         ]);
 
-        $imageId = $request->imageId;
-        $imageData = $request->imageData;
+        $imageId = $request->input('imageId');
+        $imageData = $request->input('imageData');
+
+        $branchCode = $request->input('branchCode', 'NO_BRANCH');
+        $empNo = $request->input('empNo', 'NO_EMPLOYEE');
+
+        // Sanitize branch folder name
+        $branchCode = strtoupper(trim($branchCode));
+        $branchCode = preg_replace('/[^A-Z0-9_-]/', '_', $branchCode);
+
+        if ($branchCode === '') {
+            $branchCode = 'NO_BRANCH';
+        }
+
+        // Sanitize employee folder name
+        $empNo = strtoupper(trim($empNo));
+        $empNo = preg_replace('/[^A-Z0-9_-]/', '_', $empNo);
+
+        if ($empNo === '') {
+            $empNo = 'NO_EMPLOYEE';
+        }
 
         if (!preg_match('/^data:image\/(\w+);base64,/', $imageData, $matches)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid image data format. Expected base64 image data URL.'
+                'message' => 'Invalid image data format.'
             ], 422);
         }
-        $extension = $matches[1];
+
+        $extension = strtolower($matches[1]);
+
+        if ($extension === 'jpeg') {
+            $extension = 'jpg';
+        }
+
+        $allowedExtensions = ['jpg', 'png', 'webp'];
+
+        if (!in_array($extension, $allowedExtensions)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid image type.'
+            ], 422);
+        }
+
         $base64Data = substr($imageData, strpos($imageData, ',') + 1);
         $imageBinary = base64_decode($base64Data);
 
         if ($imageBinary === false) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to decode base64 image data.'
+                'message' => 'Failed to decode image data.'
             ], 422);
         }
 
-        $path = "timekeeping_images/{$imageId}.{$extension}"; // Relative path inside public storage
+        // Final path:
+        // timekeeping_images/HO/1479/imageId.jpg
+        $path = "timekeeping_images/{$branchCode}/{$empNo}/{$imageId}.{$extension}";
 
-        Storage::disk('public')->put($path, $imageBinary); // Use 'public' disk for accessibility
+$fullPath = public_path("images/" . $path);
 
-        Log::info('Image saved successfully.', ['imageId' => $imageId, 'path' => $path]);
+if (!file_exists(dirname($fullPath))) {
+    mkdir(dirname($fullPath), 0755, true);
+}
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Image saved successfully.',
-            'path' => $path // The URL path where the image can be accessed
-        ]);
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        Log::error('Validation error in saveImage:', ['errors' => $e->errors(), 'request_data' => $request->all()]);
-        return response()->json([
-            'success' => false,
-            'message' => 'Validation failed for image data.',
-            'errors' => $e->errors()
-        ], 422);
+file_put_contents($fullPath, $imageBinary);
+
+return response()->json([
+    'success' => true,
+    'path' => $path,
+    'url' => asset("images/" . $path),
+]);
     } catch (\Exception $e) {
-        Log::error('Error saving image:', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        Log::error('Error saving image:', [
+            'message' => $e->getMessage(),
+        ]);
+
         return response()->json([
             'success' => false,
-            'message' => 'Failed to save image. Please try again later.',
+            'message' => 'Failed to save image.',
             'error_details' => $e->getMessage()
         ], 500);
     }

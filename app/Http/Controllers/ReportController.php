@@ -75,7 +75,8 @@ class ReportController extends Controller
     if (!$empno || !$cutoff) {
         return response()->json([
             'success' => false,
-            'message' => 'Missing empno or cutoff parameter.'
+            'message' => 'Missing empno or cutoff parameter.',
+            'employeelv' => []
         ], 400);
     }
 
@@ -85,13 +86,6 @@ class ReportController extends Controller
         ->select('LV_TYPE', 'AVAILED_HRS', 'ENDBAL_HRS', 'AVAILED', 'ENDBAL')
         ->orderBy('LV_TYPE')
         ->get();
-
-    if ($emplvInfo->isEmpty()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No leave balance found for this employee and cutoff.'
-        ], 404);
-    }
 
     return response()->json([
         'success' => true,

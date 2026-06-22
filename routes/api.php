@@ -3,6 +3,7 @@ use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\OfficialBusinessController;
 use App\Http\Controllers\DashBoardController;
+use App\Http\Controllers\OffsetController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\TimekeepingController;
 use Illuminate\Support\Facades\Route;
@@ -81,6 +82,15 @@ Route::post('/approvalDTR', [TimekeepingController::class, 'approval']);
 Route::post('/cancelDTR', [TimekeepingController::class, 'cancel']);
 
 Route::post('/dtr/confirm', [TimekeepingController::class, 'confirmDTR']);
+
+
+Route::post('/upsertOffset', [OffsetController::class, 'upsert']);
+Route::post('/cancelOffset', [OffsetController::class, 'cancel']);
+Route::post('/getOffsetAppHistory', [OffsetController::class, 'getAppHistory']);
+Route::get('/getDTROffset/{empNo}/{startDate}/{endDate}',[OffsetController::class, 'getDTROffset']);
+Route::post('/getOffsetApprInq', [OffsetController::class, 'getOffsetApprInq']);
+Route::post('/getOffsetApprHistory', [OffsetController::class, 'getOffsetApprHistory']);
+Route::post('/approvalOffset', [OffsetController::class, 'approval']);
 
 
 use Illuminate\Support\Facades\DB;
