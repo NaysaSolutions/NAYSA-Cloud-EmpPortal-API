@@ -82,6 +82,8 @@ Route::post('/approvalDTR', [TimekeepingController::class, 'approval']);
 Route::post('/cancelDTR', [TimekeepingController::class, 'cancel']);
 
 Route::post('/dtr/confirm', [TimekeepingController::class, 'confirmDTR']);
+Route::get('/getAllDTR', [TimekeepingController::class, 'getAllDTR']);
+Route::get('/getAllDTRHR', [TimekeepingController::class, 'getAllDTRHR']);
 
 
 Route::post('/upsertOffset', [OffsetController::class, 'upsert']);

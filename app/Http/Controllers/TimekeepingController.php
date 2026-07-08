@@ -717,4 +717,162 @@ public function confirmDTR(Request $request)
         }
     }
 
+    private function runEmpInqDTR(string $mode, ?string $empNo, ?string $startDate, ?string $endDate, ?string $userId = null): array
+{
+    $pdo = DB::connection()->getPdo();
+
+    $stmt = $pdo->prepare("
+        SET NOCOUNT ON;
+
+        EXEC dbo.sproc_PHP_EmpInq_DTR
+            @mode      = ?,
+            @stat      = ?,
+            @emp       = ?,
+            @startdate = ?,
+            @enddate   = ?,
+            @date      = ?,
+            @userid    = ?,
+            @cutoff    = ?,
+            @params    = ?
+    ");
+
+    $stmt->execute([
+        $mode,
+        null,
+        $empNo,
+        $startDate,
+        $endDate,
+        null,
+        $userId,
+        null,
+        null,
+    ]);
+
+    $rows = [];
+
+    // SQL Server may return non-select result sets first.
+    // This prevents: "The active result for the query contains no fields."
+    do {
+        if ($stmt->columnCount() > 0) {
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            break;
+        }
+    } while ($stmt->nextRowset());
+
+    $stmt->closeCursor();
+
+    return $rows;
+}
+
+public function getAllDTR(Request $request)
+{
+    $request->merge([
+        'empNo'     => $request->input('empNo', $request->input('EMP_NO')),
+        'startDate' => $request->input('startDate', $request->input('START_DATE')),
+        'endDate'   => $request->input('endDate', $request->input('END_DATE')),
+    ]);
+
+    $request->validate([
+        'startDate' => 'required|date_format:Y-m-d',
+        'endDate'   => 'required|date_format:Y-m-d',
+        'empNo'     => 'nullable|string',
+    ]);
+
+    $user = auth()->user();
+
+    $userId =
+        $request->input('userId') ??
+        $user->empno ??
+        $user->userid ??
+        $user->id ??
+        'SYSTEM';
+
+    try {
+        $records = $this->runEmpInqDTR(
+            'getAll_DTR',
+            $request->input('empNo'),
+            $request->input('startDate'),
+            $request->input('endDate'),
+            $userId
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'All DTR records fetched successfully.',
+            'records' => $records,
+            'data'    => $records,
+        ]);
+    } catch (\Throwable $e) {
+        Log::error('Error fetching getAll_DTR records:', [
+            'message'   => $e->getMessage(),
+            'trace'     => $e->getTraceAsString(),
+            'startDate' => $request->input('startDate'),
+            'endDate'   => $request->input('endDate'),
+            'empNo'     => $request->input('empNo'),
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to fetch all DTR records. Please try again later.',
+            'error_details' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+public function getAllDTRHR(Request $request)
+{
+    $request->merge([
+        'empNo'     => $request->input('empNo', $request->input('EMP_NO')),
+        'startDate' => $request->input('startDate', $request->input('START_DATE')),
+        'endDate'   => $request->input('endDate', $request->input('END_DATE')),
+    ]);
+
+    $request->validate([
+        // For getAll_DTR_HR, empNo is the approver/HR employee number.
+        'empNo'     => 'required|string',
+        'startDate' => 'required|date_format:Y-m-d',
+        'endDate'   => 'required|date_format:Y-m-d',
+    ]);
+
+    $user = auth()->user();
+
+    $userId =
+        $request->input('userId') ??
+        $user->empno ??
+        $user->userid ??
+        $user->id ??
+        'SYSTEM';
+
+    try {
+        $records = $this->runEmpInqDTR(
+            'getAll_DTR_HR',
+            $request->input('empNo'),
+            $request->input('startDate'),
+            $request->input('endDate'),
+            $userId
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'HR DTR records fetched successfully.',
+            'records' => $records,
+            'data'    => $records,
+        ]);
+    } catch (\Throwable $e) {
+        Log::error('Error fetching getAll_DTR_HR records:', [
+            'message'   => $e->getMessage(),
+            'trace'     => $e->getTraceAsString(),
+            'startDate' => $request->input('startDate'),
+            'endDate'   => $request->input('endDate'),
+            'empNo'     => $request->input('empNo'),
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to fetch HR DTR records. Please try again later.',
+            'error_details' => $e->getMessage(),
+        ], 500);
+    }
+}
+
 }
