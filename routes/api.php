@@ -1,4 +1,5 @@
 <?php
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\OfficialBusinessController;
@@ -6,6 +7,8 @@ use App\Http\Controllers\DashBoardController;
 use App\Http\Controllers\OffsetController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\TimekeepingController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\FaceIOController;
 use Illuminate\Support\Facades\Route;
 /*
 |--------------------------------------------------------------------------
@@ -21,8 +24,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/dashBoard', [DashBoardController::class, 'index']);
 Route::post('/regEmp', [RegisterController::class, 'regEmp']);
-Route::post('/loginEmp', [RegisterController::class, 'loginEmp']);
 Route::post('/getDTR', [DashBoardController::class, 'getDTR']);
+Route::post('/loginEmp', [RegisterController::class, 'loginEmp']);
 
 
 Route::post('/getLVApprInq', [LeaveController::class, 'getApprInq']);
@@ -58,11 +61,11 @@ Route::post('/cancelOB', [OfficialBusinessController::class, 'cancel']);
 
 
 // routes/api.php
-Route::get('/reports/payslip', [App\Http\Controllers\ReportController::class, 'payslipReport']);
-Route::get('/reports/payslipLV', [App\Http\Controllers\ReportController::class, 'payslipReport_LV']);
-Route::get('/reports/payslipLN', [App\Http\Controllers\ReportController::class, 'payslipReport_LN']);
-Route::get('/reports/payslipYTD', [App\Http\Controllers\ReportController::class, 'payslipReport_YTD']);
-Route::get('/reports/payslipCutoff', [App\Http\Controllers\ReportController::class, 'payslipReport_Cutoff']);
+Route::get('/reports/payslip', [ReportController::class, 'payslipReport']);
+Route::get('/reports/payslipLV', [ReportController::class, 'payslipReport_LV']);
+Route::get('/reports/payslipLN', [ReportController::class, 'payslipReport_LN']);
+Route::get('/reports/payslipYTD', [ReportController::class, 'payslipReport_YTD']);
+Route::get('/reports/payslipCutoff', [ReportController::class, 'payslipReport_Cutoff']);
 
 
 
@@ -85,6 +88,17 @@ Route::post('/dtr/confirm', [TimekeepingController::class, 'confirmDTR']);
 Route::get('/getAllDTR', [TimekeepingController::class, 'getAllDTR']);
 Route::get('/getAllDTRHR', [TimekeepingController::class, 'getAllDTRHR']);
 
+// Route::get('/faceio/check/{empNo}', [FaceIOController::class, 'check']);
+// Route::post('/faceio/enroll', [FaceIOController::class, 'enroll']);
+// Route::post('/faceio/delete', [FaceIOController::class, 'delete']);
+// Route::get('/faceio/enrollment-status/{userCode}', [FaceIOController::class, 'enrollmentStatus']);
+
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/faceio/check/{empNo}', [FaceIOController::class, 'check']);
+    Route::post('/faceio/enroll', [FaceIOController::class, 'enroll']);
+    Route::post('/faceio/delete', [FaceIOController::class, 'delete']);
+});
 
 Route::post('/upsertOffset', [OffsetController::class, 'upsert']);
 Route::post('/cancelOffset', [OffsetController::class, 'cancel']);

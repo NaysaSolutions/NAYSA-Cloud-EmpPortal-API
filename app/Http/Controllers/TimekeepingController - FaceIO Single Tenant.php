@@ -162,12 +162,6 @@ public function upsertTimeIn(Request $request)
                 'detail.longitude' => 'nullable',
                 'detail.locationAccuracy' => 'nullable',
                 'detail.locationAddress' => 'nullable|string',
-
-                'detail.faceioFacialId' => 'nullable|string',
-                'detail.faceioPayloadEmpNo' => 'nullable|string',
-                'detail.faceioTenantCode' => 'nullable|string',
-                'detail.faceioPayloadTenantCode' => 'nullable|string',
-                'detail.faceioVerifiedAt' => 'nullable|string',
             ]);
 
             if ($validator->fails()) {
@@ -185,8 +179,6 @@ public function upsertTimeIn(Request $request)
             }
 
             $detail = &$item['detail'];
-
-            $this->validateFaceIoVerification($request, $item, $detail);
 
             // TIME IN
             if (!empty($detail['timeInImageBase64'])) {
@@ -287,75 +279,6 @@ public function upsertTimeIn(Request $request)
     }
 }
 
-
-private function validateFaceIoVerification(Request $request, array $item, array $detail): void
-{
-    $facialId = trim((string) ($detail['faceioFacialId'] ?? ''));
-
-    if ($facialId === '') {
-        return;
-    }
-
-    $empNo = trim((string) ($detail['empNo'] ?? $item['empNo'] ?? ''));
-    $payloadEmpNo = trim((string) ($detail['faceioPayloadEmpNo'] ?? ''));
-    $requestTenantCode = $this->normalizeTenantCode(
-        $detail['faceioTenantCode'] ?? $request->header('X-Tenant-Code') ?? $request->input('tenantCode')
-    );
-    $payloadTenantCode = $this->normalizeTenantCode($detail['faceioPayloadTenantCode'] ?? null);
-
-    if ($empNo === '') {
-        throw new \Exception('Employee number is required for FACEIO validation.');
-    }
-
-    if ($payloadEmpNo !== '' && strcasecmp($payloadEmpNo, $empNo) !== 0) {
-        throw new \Exception('FACEIO verification employee mismatch.');
-    }
-
-    $employee = DB::table('paymast')
-        ->select('empno', 'faceio_facial_id')
-        ->where('empno', $empNo)
-        ->first();
-
-    if (!$employee) {
-        throw new \Exception('Employee not found for FACEIO validation.');
-    }
-
-    $savedFacialId = trim((string) ($employee->faceio_facial_id ?? ''));
-
-    if ($savedFacialId === '') {
-        throw new \Exception('Employee has no saved FACEIO enrollment.');
-    }
-
-    if (strcasecmp($savedFacialId, $facialId) !== 0) {
-        Log::warning('FACEIO facial ID mismatch on timekeeping.', [
-            'empNo' => $empNo,
-            'providedFacialId' => $facialId,
-            'savedFacialId' => $savedFacialId,
-            'requestTenantCode' => $requestTenantCode,
-            'payloadTenantCode' => $payloadTenantCode,
-        ]);
-
-        throw new \Exception('FACEIO verification does not match the logged-in employee enrollment.');
-    }
-
-    if ($requestTenantCode !== null && $payloadTenantCode !== null && strcasecmp($requestTenantCode, $payloadTenantCode) !== 0) {
-        Log::warning('FACEIO tenant code mismatch on timekeeping.', [
-            'empNo' => $empNo,
-            'requestTenantCode' => $requestTenantCode,
-            'payloadTenantCode' => $payloadTenantCode,
-            'facialId' => $facialId,
-        ]);
-
-        throw new \Exception('FACEIO verification tenant mismatch.');
-    }
-}
-
-private function normalizeTenantCode($value): ?string
-{
-    $value = trim((string) ($value ?? ''));
-    return $value === '' ? null : $value;
-}
-
 private function generateImageId()
 {
     $result = DB::select('EXEC sproc_php_auto_newid');
@@ -440,89 +363,51 @@ private function saveBase64ImageWithId($imageId, $imageData)
         $request->validate([
             'imageId' => 'required|string',
             'imageData' => 'required|string',
-            'branchCode' => 'nullable|string',
-            'empNo' => 'nullable|string',
         ]);
 
-        $imageId = $request->input('imageId');
-        $imageData = $request->input('imageData');
-
-        $branchCode = $request->input('branchCode', 'NO_BRANCH');
-        $empNo = $request->input('empNo', 'NO_EMPLOYEE');
-
-        // Sanitize branch folder name
-        $branchCode = strtoupper(trim($branchCode));
-        $branchCode = preg_replace('/[^A-Z0-9_-]/', '_', $branchCode);
-
-        if ($branchCode === '') {
-            $branchCode = 'NO_BRANCH';
-        }
-
-        // Sanitize employee folder name
-        $empNo = strtoupper(trim($empNo));
-        $empNo = preg_replace('/[^A-Z0-9_-]/', '_', $empNo);
-
-        if ($empNo === '') {
-            $empNo = 'NO_EMPLOYEE';
-        }
+        $imageId = $request->imageId;
+        $imageData = $request->imageData;
 
         if (!preg_match('/^data:image\/(\w+);base64,/', $imageData, $matches)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid image data format.'
+                'message' => 'Invalid image data format. Expected base64 image data URL.'
             ], 422);
         }
-
-        $extension = strtolower($matches[1]);
-
-        if ($extension === 'jpeg') {
-            $extension = 'jpg';
-        }
-
-        $allowedExtensions = ['jpg', 'png', 'webp'];
-
-        if (!in_array($extension, $allowedExtensions)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid image type.'
-            ], 422);
-        }
-
+        $extension = $matches[1];
         $base64Data = substr($imageData, strpos($imageData, ',') + 1);
         $imageBinary = base64_decode($base64Data);
 
         if ($imageBinary === false) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to decode image data.'
+                'message' => 'Failed to decode base64 image data.'
             ], 422);
         }
 
-        // Final path:
-        // timekeeping_images/HO/1479/imageId.jpg
-        $path = "timekeeping_images/{$branchCode}/{$empNo}/{$imageId}.{$extension}";
+        $path = "timekeeping_images/{$imageId}.{$extension}"; // Relative path inside public storage
 
-$fullPath = public_path("images/" . $path);
+        Storage::disk('public')->put($path, $imageBinary); // Use 'public' disk for accessibility
 
-if (!file_exists(dirname($fullPath))) {
-    mkdir(dirname($fullPath), 0755, true);
-}
-
-file_put_contents($fullPath, $imageBinary);
-
-return response()->json([
-    'success' => true,
-    'path' => $path,
-    'url' => asset("images/" . $path),
-]);
-    } catch (\Exception $e) {
-        Log::error('Error saving image:', [
-            'message' => $e->getMessage(),
-        ]);
+        Log::info('Image saved successfully.', ['imageId' => $imageId, 'path' => $path]);
 
         return response()->json([
+            'success' => true,
+            'message' => 'Image saved successfully.',
+            'path' => $path // The URL path where the image can be accessed
+        ]);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        Log::error('Validation error in saveImage:', ['errors' => $e->errors(), 'request_data' => $request->all()]);
+        return response()->json([
             'success' => false,
-            'message' => 'Failed to save image.',
+            'message' => 'Validation failed for image data.',
+            'errors' => $e->errors()
+        ], 422);
+    } catch (\Exception $e) {
+        Log::error('Error saving image:', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to save image. Please try again later.',
             'error_details' => $e->getMessage()
         ], 500);
     }
@@ -1006,163 +891,5 @@ public function confirmDTR(Request $request)
             ], 500);
         }
     }
-
-    private function runEmpInqDTR(string $mode, ?string $empNo, ?string $startDate, ?string $endDate, ?string $userId = null): array
-{
-    $pdo = DB::connection()->getPdo();
-
-    $stmt = $pdo->prepare("
-        SET NOCOUNT ON;
-
-        EXEC dbo.sproc_PHP_EmpInq_DTR
-            @mode      = ?,
-            @stat      = ?,
-            @emp       = ?,
-            @startdate = ?,
-            @enddate   = ?,
-            @date      = ?,
-            @userid    = ?,
-            @cutoff    = ?,
-            @params    = ?
-    ");
-
-    $stmt->execute([
-        $mode,
-        null,
-        $empNo,
-        $startDate,
-        $endDate,
-        null,
-        $userId,
-        null,
-        null,
-    ]);
-
-    $rows = [];
-
-    // SQL Server may return non-select result sets first.
-    // This prevents: "The active result for the query contains no fields."
-    do {
-        if ($stmt->columnCount() > 0) {
-            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            break;
-        }
-    } while ($stmt->nextRowset());
-
-    $stmt->closeCursor();
-
-    return $rows;
-}
-
-public function getAllDTR(Request $request)
-{
-    $request->merge([
-        'empNo'     => $request->input('empNo', $request->input('EMP_NO')),
-        'startDate' => $request->input('startDate', $request->input('START_DATE')),
-        'endDate'   => $request->input('endDate', $request->input('END_DATE')),
-    ]);
-
-    $request->validate([
-        'startDate' => 'required|date_format:Y-m-d',
-        'endDate'   => 'required|date_format:Y-m-d',
-        'empNo'     => 'nullable|string',
-    ]);
-
-    $user = auth()->user();
-
-    $userId =
-        $request->input('userId') ??
-        $user->empno ??
-        $user->userid ??
-        $user->id ??
-        'SYSTEM';
-
-    try {
-        $records = $this->runEmpInqDTR(
-            'getAll_DTR',
-            $request->input('empNo'),
-            $request->input('startDate'),
-            $request->input('endDate'),
-            $userId
-        );
-
-        return response()->json([
-            'success' => true,
-            'message' => 'All DTR records fetched successfully.',
-            'records' => $records,
-            'data'    => $records,
-        ]);
-    } catch (\Throwable $e) {
-        Log::error('Error fetching getAll_DTR records:', [
-            'message'   => $e->getMessage(),
-            'trace'     => $e->getTraceAsString(),
-            'startDate' => $request->input('startDate'),
-            'endDate'   => $request->input('endDate'),
-            'empNo'     => $request->input('empNo'),
-        ]);
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to fetch all DTR records. Please try again later.',
-            'error_details' => $e->getMessage(),
-        ], 500);
-    }
-}
-
-public function getAllDTRHR(Request $request)
-{
-    $request->merge([
-        'empNo'     => $request->input('empNo', $request->input('EMP_NO')),
-        'startDate' => $request->input('startDate', $request->input('START_DATE')),
-        'endDate'   => $request->input('endDate', $request->input('END_DATE')),
-    ]);
-
-    $request->validate([
-        // For getAll_DTR_HR, empNo is the approver/HR employee number.
-        'empNo'     => 'required|string',
-        'startDate' => 'required|date_format:Y-m-d',
-        'endDate'   => 'required|date_format:Y-m-d',
-    ]);
-
-    $user = auth()->user();
-
-    $userId =
-        $request->input('userId') ??
-        $user->empno ??
-        $user->userid ??
-        $user->id ??
-        'SYSTEM';
-
-    try {
-        $records = $this->runEmpInqDTR(
-            'getAll_DTR_HR',
-            $request->input('empNo'),
-            $request->input('startDate'),
-            $request->input('endDate'),
-            $userId
-        );
-
-        return response()->json([
-            'success' => true,
-            'message' => 'HR DTR records fetched successfully.',
-            'records' => $records,
-            'data'    => $records,
-        ]);
-    } catch (\Throwable $e) {
-        Log::error('Error fetching getAll_DTR_HR records:', [
-            'message'   => $e->getMessage(),
-            'trace'     => $e->getTraceAsString(),
-            'startDate' => $request->input('startDate'),
-            'endDate'   => $request->input('endDate'),
-            'empNo'     => $request->input('empNo'),
-        ]);
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to fetch HR DTR records. Please try again later.',
-            'error_details' => $e->getMessage(),
-        ], 500);
-    }
-}
 
 }
