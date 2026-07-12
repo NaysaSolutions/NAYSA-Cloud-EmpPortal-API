@@ -20,7 +20,8 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
-
+Route::get('/me', [AuthController::class, 'me']);
+Route::post('/loginDB', [AuthController::class, 'loginDB']);
 
 Route::post('/dashBoard', [DashBoardController::class, 'index']);
 Route::post('/regEmp', [RegisterController::class, 'regEmp']);
@@ -68,6 +69,13 @@ Route::get('/reports/payslipYTD', [ReportController::class, 'payslipReport_YTD']
 Route::get('/reports/payslipCutoff', [ReportController::class, 'payslipReport_Cutoff']);
 
 
+
+// Route::post('/upsertTimeIn', [TimekeepingController::class, 'upsertTimeIn']);
+// Route::post('/saveImage', [TimekeepingController::class, 'saveImage']);
+// Route::get('/getNewImageId', [TimekeepingController::class, 'getNewImageId']);
+// Route::get('/dtrRecords/{empNo}/{startDate}/{endDate}', [TimekeepingController::class, 'getDTRRecords']);
+// Route::get('/getDTRHistory', [TimekeepingController::class, 'getDTRHistory']);
+// Route::get('/empBranchLocation/{empNo}', [TimekeepingController::class, 'getBranchLocation']);
 
 Route::post('/upsertTimeIn', [TimekeepingController::class, 'upsertTimeIn']);
 Route::post('/saveImage', [TimekeepingController::class, 'saveImage']);

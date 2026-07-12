@@ -71,15 +71,14 @@ class AuthController extends Controller
 
     public function loginDB(Request $request) 
 {
-    // Validate the request data
     $request->validate([
         'userId' => 'required|string',
         'password' => 'required',
     ]);
 
-    // Find the user by userId, specifying the 'API' connection
-    $user = UsersDB::on(env('DB_CONNECTION'))->where('userId', $request->userId)->first();
-
+    $user = UsersDB::on(env('DB_CONNECTION'))
+        ->where('userId', $request->userId)
+        ->first();
 
     if (!$user) {
         return response()->json([
@@ -88,7 +87,6 @@ class AuthController extends Controller
         ], 404);
     }
 
-    // Check if the password matches
     if (!Hash::check($request->password, $user->password)) {
         return response()->json([
             'status' => 'error',
@@ -96,15 +94,30 @@ class AuthController extends Controller
         ], 401);
     }
 
-    // Return success response
+    $employee = DB::table('paymast')
+        ->select(
+            'empno',
+            'emp_name',
+            DB::raw("ISNULL(hr_flag, 'N') as hr_flag")
+        )
+        ->where('empno', $user->userId)
+        ->first();
+
     return response()->json([
         'status' => 'success',
+        'success' => true,
         'message' => 'Login successful.',
         'user' => [
             'id' => $user->id,
             'userId' => $user->userId,
+            'userid' => $user->userId,
+            'empno' => $employee->empno ?? $user->userId,
+            'EMP_NO' => $employee->empno ?? $user->userId,
             'username' => $user->username,
             'email' => $user->email,
+            'empName' => $employee->emp_name ?? $user->username,
+            'hr_flag' => $employee->hr_flag ?? 'N',
+            'hrFlag' => $employee->hr_flag ?? 'N',
         ],
     ]);
 }
@@ -164,4 +177,62 @@ class AuthController extends Controller
             'message' => 'User not found.',
         ]);
     }
+
+
+public function me(Request $request)
+{
+    $userId = $request->input('userId')
+        ?? $request->input('userid')
+        ?? $request->input('empno')
+        ?? $request->query('userId')
+        ?? $request->query('userid')
+        ?? $request->query('empno');
+
+    if (!$userId) {
+        return response()->json([
+            'success' => false,
+            'status' => 'error',
+            'message' => 'User ID is required.',
+        ], 422);
+    }
+
+    $user = UsersDB::on(env('DB_CONNECTION'))
+        ->where('userId', $userId)
+        ->first();
+
+    if (!$user) {
+        return response()->json([
+            'success' => false,
+            'status' => 'error',
+            'message' => 'User not found.',
+        ], 404);
+    }
+
+    $employee = DB::table('paymast')
+        ->select(
+            'empno',
+            'emp_name',
+            DB::raw("ISNULL(hr_flag, 'N') as hr_flag")
+        )
+        ->where('empno', $user->userId)
+        ->first();
+
+    return response()->json([
+        'success' => true,
+        'status' => 'success',
+        'user' => [
+            'id' => $user->id,
+            'userId' => $user->userId,
+            'userid' => $user->userId,
+            'empno' => $employee->empno ?? $user->userId,
+            'EMP_NO' => $employee->empno ?? $user->userId,
+            'username' => $user->username,
+            'email' => $user->email,
+            'empName' => $employee->emp_name ?? $user->username,
+            'hr_flag' => $employee->hr_flag ?? 'N',
+            'hrFlag' => $employee->hr_flag ?? 'N',
+        ],
+    ]);
+}
+
 }

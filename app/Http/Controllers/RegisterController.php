@@ -259,13 +259,19 @@ public function loginEmp(Request $request)
     $empno = trim($request->empno);
 
     $row = DB::table('paymast')
-        ->selectRaw('[EMPNO] as empno, [ASKAPP_PW] as askapp_pw, [EMP_NAME] as emp_name')
+        ->selectRaw("
+            [EMPNO] as empno,
+            [ASKAPP_PW] as askapp_pw,
+            [EMP_NAME] as emp_name,
+            ISNULL([HR_FLAG], 'N') as hr_flag
+        ")
         ->where('EMPNO', $empno)
         ->first();
 
     if (!$row) {
         return response()->json([
             'status' => 'failed',
+            'success' => false,
             'message' => 'Employee not found',
         ], 404);
     }
@@ -275,6 +281,7 @@ public function loginEmp(Request $request)
     if ($dbHash === '') {
         return response()->json([
             'status' => 'failed',
+            'success' => false,
             'message' => 'Password is empty in database',
         ], 401);
     }
@@ -282,6 +289,7 @@ public function loginEmp(Request $request)
     if (!Hash::check($request->password, $dbHash)) {
         return response()->json([
             'status' => 'failed',
+            'success' => false,
             'message' => 'Invalid credentials',
         ], 401);
     }
@@ -291,19 +299,35 @@ public function loginEmp(Request $request)
     if (!$user) {
         return response()->json([
             'status' => 'failed',
+            'success' => false,
             'message' => 'User record not found for token creation',
         ], 500);
     }
 
     $token = $user->createToken('auth_token')->plainTextToken;
 
+    $userData = [
+        'empno' => $row->empno,
+        'EMP_NO' => $row->empno,
+        'userId' => $row->empno,
+        'userid' => $row->empno,
+        'emp_name' => $row->emp_name,
+        'empName' => $row->emp_name,
+        'hr_flag' => $row->hr_flag ?? 'N',
+        'hrFlag' => $row->hr_flag ?? 'N',
+    ];
+
     return response()->json([
         'status' => 'success',
+        'success' => true,
+        'message' => 'Login successful.',
         'token' => $token,
-        'data' => [
-            'empno' => $row->empno,
-            'emp_name' => $row->emp_name,
-        ],
+
+        // Keep this for your existing Login.jsx if it uses response.data.data
+        'data' => $userData,
+
+        // Add this for AuthContext / DTRMonitoring if it uses response.data.user
+        'user' => $userData,
     ]);
 }
 
