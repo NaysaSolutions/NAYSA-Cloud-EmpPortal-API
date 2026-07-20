@@ -251,70 +251,70 @@ class RegisterController extends Controller
 
 public function loginEmp(Request $request)
 {
-    $request->validate([
-        'empno' => 'required|string',
-        'password' => 'required|string',
+    $validated = $request->validate([
+        'empno' => ['required', 'string'],
+        'password' => ['required', 'string'],
     ]);
 
-    $empno = trim($request->empno);
+    $empno = trim($validated['empno']);
 
-    $row = DB::table('paymast')
-        ->selectRaw("
-            [EMPNO] as empno,
-            [ASKAPP_PW] as askapp_pw,
-            [EMP_NAME] as emp_name,
-            ISNULL([HR_FLAG], 'N') as hr_flag
-        ")
+    /*
+     * The User model is explicitly mapped to paymast.
+     * Do not alias EMPNO because Sanctum needs the real primary-key attribute.
+     */
+    $user = User::query()
+        ->select([
+            'EMPNO',
+            'ASKAPP_PW',
+            'EMP_NAME',
+            'COMP_NAME',
+            'HR_FLAG',
+        ])
         ->where('EMPNO', $empno)
         ->first();
-
-    if (!$row) {
-        return response()->json([
-            'status' => 'failed',
-            'success' => false,
-            'message' => 'Employee not found',
-        ], 404);
-    }
-
-    $dbHash = trim((string) $row->askapp_pw);
-
-    if ($dbHash === '') {
-        return response()->json([
-            'status' => 'failed',
-            'success' => false,
-            'message' => 'Password is empty in database',
-        ], 401);
-    }
-
-    if (!Hash::check($request->password, $dbHash)) {
-        return response()->json([
-            'status' => 'failed',
-            'success' => false,
-            'message' => 'Invalid credentials',
-        ], 401);
-    }
-
-    $user = User::where('EMPNO', $empno)->first();
 
     if (!$user) {
         return response()->json([
             'status' => 'failed',
             'success' => false,
-            'message' => 'User record not found for token creation',
-        ], 500);
+            'message' => 'Employee not found.',
+        ], 404);
+    }
+
+    $dbHash = trim((string) $user->ASKAPP_PW);
+
+    if ($dbHash === '') {
+        return response()->json([
+            'status' => 'failed',
+            'success' => false,
+            'message' => 'Employee password has not been registered.',
+        ], 401);
+    }
+
+    if (!Hash::check($validated['password'], $dbHash)) {
+        return response()->json([
+            'status' => 'failed',
+            'success' => false,
+            'message' => 'Invalid credentials.',
+        ], 401);
     }
 
     $token = $user->createToken('auth_token')->plainTextToken;
 
     $userData = [
-        'empno' => $row->empno,
-        'EMP_NO' => $row->empno,
-        'userId' => $row->empno,
-        'userid' => $row->empno,
-        'emp_name' => $row->emp_name,
-        'empName' => $row->emp_name,
-        'hr_flag' => $row->hr_flag ?? 'N',
-        'hrFlag' => $row->hr_flag ?? 'N',
+        'empno' => trim((string) $user->EMPNO),
+        'EMP_NO' => trim((string) $user->EMPNO),
+        'userId' => trim((string) $user->EMPNO),
+        'userid' => trim((string) $user->EMPNO),
+
+        'emp_name' => trim((string) $user->EMP_NAME),
+        'empName' => trim((string) $user->EMP_NAME),
+
+        'comp_name' => trim((string) $user->COMP_NAME),
+        'compName' => trim((string) $user->COMP_NAME),
+
+        'hr_flag' => trim((string) ($user->HR_FLAG ?? 'N')),
+        'hrFlag' => trim((string) ($user->HR_FLAG ?? 'N')),
     ];
 
     return response()->json([
@@ -322,11 +322,7 @@ public function loginEmp(Request $request)
         'success' => true,
         'message' => 'Login successful.',
         'token' => $token,
-
-        // Keep this for your existing Login.jsx if it uses response.data.data
         'data' => $userData,
-
-        // Add this for AuthContext / DTRMonitoring if it uses response.data.user
         'user' => $userData,
     ]);
 }

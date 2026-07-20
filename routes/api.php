@@ -20,6 +20,21 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+Route::get('/debug-user-model', function () {
+    $user = new \App\Models\User();
+    $reflection = new \ReflectionClass($user);
+
+    return response()->json([
+        'class' => get_class($user),
+        'table' => $user->getTable(),
+        'primaryKey' => $user->getKeyName(),
+        'file' => $reflection->getFileName(),
+        'basePath' => base_path(),
+        'appPath' => app_path(),
+    ]);
+});
+
 Route::get('/me', [AuthController::class, 'me']);
 Route::post('/loginDB', [AuthController::class, 'loginDB'])->middleware('throttle:login');
 

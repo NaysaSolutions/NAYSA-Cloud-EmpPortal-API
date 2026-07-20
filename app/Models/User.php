@@ -12,12 +12,13 @@ class User extends Authenticatable
 
     protected $table = 'paymast';
     protected $primaryKey = 'EMPNO';
+
     public $incrementing = false;
     protected $keyType = 'string';
     public $timestamps = false;
 
     public function getAuthPassword()
     {
-        return $this->getAttribute('ASKAPP_PW');
+        return trim((string) $this->getAttribute('ASKAPP_PW'));
     }
 }
