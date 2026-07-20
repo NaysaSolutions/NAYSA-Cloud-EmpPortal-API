@@ -21,12 +21,12 @@ use Illuminate\Support\Facades\Route;
 |
 */
 Route::get('/me', [AuthController::class, 'me']);
-Route::post('/loginDB', [AuthController::class, 'loginDB']);
+Route::post('/loginDB', [AuthController::class, 'loginDB'])->middleware('throttle:login');
 
 Route::post('/dashBoard', [DashBoardController::class, 'index']);
 Route::post('/regEmp', [RegisterController::class, 'regEmp']);
 Route::post('/getDTR', [DashBoardController::class, 'getDTR']);
-Route::post('/loginEmp', [RegisterController::class, 'loginEmp']);
+Route::post('/loginEmp', [RegisterController::class, 'loginEmp'])->middleware('throttle:login');
 
 
 Route::post('/getLVApprInq', [LeaveController::class, 'getApprInq']);
