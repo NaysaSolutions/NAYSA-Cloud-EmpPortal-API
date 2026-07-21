@@ -10,6 +10,7 @@ use App\Http\Controllers\TimekeepingController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\FaceIOController;
 use Illuminate\Support\Facades\Route;
+use Carbon\Carbon;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -34,6 +35,15 @@ Route::get('/debug-user-model', function () {
         'appPath' => app_path(),
     ]);
 });
+
+
+Route::get('/server-time', function () {
+    return response()->json([
+        'serverTime' => now('Asia/Manila')->toIso8601String(),
+        'timezone' => 'Asia/Manila',
+    ]);
+});
+
 
 Route::get('/me', [AuthController::class, 'me']);
 Route::post('/loginDB', [AuthController::class, 'loginDB'])->middleware('throttle:login');
