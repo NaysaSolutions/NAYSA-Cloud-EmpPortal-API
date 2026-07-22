@@ -37,11 +37,20 @@ Route::get('/debug-user-model', function () {
 });
 
 
+// Route::get('/server-time', function () {
+//     return response()->json([
+//         'serverTime' => now('Asia/Manila')->toIso8601String(),
+//         'timezone' => 'Asia/Manila',
+//     ]);
+// });
+
+
 Route::get('/server-time', function () {
     return response()->json([
         'serverTime' => now('Asia/Manila')->toIso8601String(),
-        'timezone' => 'Asia/Manila',
-    ]);
+        'timezone'   => 'Asia/Manila',
+        'timestamp'  => now('Asia/Manila')->timestamp,
+    ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
 });
 
 
