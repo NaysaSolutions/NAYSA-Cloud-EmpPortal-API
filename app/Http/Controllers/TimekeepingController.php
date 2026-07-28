@@ -521,6 +521,7 @@ class TimekeepingController extends Controller
 
             $empNo = $data['empNo'] ?? null;
             $stamp = $data['dtrStamp'] ?? null;
+            $remarks = $data['appRemarks'] ?? null;
 
             if (!$empNo || !$stamp) {
                 return response()->json([
@@ -533,6 +534,7 @@ class TimekeepingController extends Controller
             $jsonParams = json_encode([
                 'empNo'    => $empNo,
                 'dtrStamp' => $stamp,
+                'appRemarks' => $remarks,
             ], JSON_UNESCAPED_SLASHES);
 
             $this->executeDtrStatement(

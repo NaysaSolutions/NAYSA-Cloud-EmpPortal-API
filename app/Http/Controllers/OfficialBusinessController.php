@@ -296,6 +296,7 @@ public function cancel(Request $request)
 
         $empNo   = $payload['empNo']   ?? null;
         $stamp   = $payload['obStamp'] ?? null;
+        $remarks = $payload['appRemarks'] ?? null;
 
         if (!$empNo || !$stamp) {
             return response()->json([
@@ -307,6 +308,7 @@ public function cancel(Request $request)
         $jsonParams = json_encode([
             'empNo'   => $empNo,
             'obStamp' => $stamp,
+            'appRemarks' => $remarks,
         ], JSON_UNESCAPED_SLASHES);
 
         // EXEC sproc_PHP_EmpInq_Overtime @mode='Cancel', @params='{"empNo":"...","otStamp":"..."}'
