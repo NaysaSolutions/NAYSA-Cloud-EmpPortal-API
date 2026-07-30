@@ -282,4 +282,63 @@ public function cancel(Request $request)
     }
 }
 
+// ** Leave Query
+public function getInquiry(Request $request)
+{
+    $validated = $request->validate([
+        'EMP_NO' => 'required|string',
+        'START_DATE' => 'required|date_format:Y-m-d',
+        'END_DATE' => 'required|date_format:Y-m-d|after_or_equal:START_DATE',
+        'STAT' => 'nullable|string',
+    ]);
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_EmpInq_Leave
+                @mode = ?,
+                @stat = ?,
+                @emp = ?,
+                @startdate = ?,
+                @enddate = ?',
+            [
+                'Inquiry',
+                $validated['STAT'] ?? null,
+                $validated['EMP_NO'],
+                $validated['START_DATE'],
+                $validated['END_DATE'],
+            ]
+        );
+
+        $rawResult = $results[0]->result ?? '[]';
+
+        if (is_string($rawResult)) {
+            $leaveRecords = json_decode($rawResult, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \RuntimeException('Invalid JSON result returned by the Leave Inquiry query.');
+            }
+        } else {
+            $leaveRecords = is_array($rawResult) ? $rawResult : [];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $leaveRecords ?? [],
+        ], 200);
+    } catch (\Throwable $e) {
+        Log::error('Error in leave inquiry:', [
+            'employee_no' => $validated['EMP_NO'],
+            'start_date' => $validated['START_DATE'],
+            'end_date' => $validated['END_DATE'],
+            'status' => $validated['STAT'] ?? null,
+            'error' => $e->getMessage(),
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
+
 };

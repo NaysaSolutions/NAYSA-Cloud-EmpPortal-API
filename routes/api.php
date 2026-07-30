@@ -71,6 +71,7 @@ Route::post('/upsertLV', [LeaveController::class, 'upsert']);
 Route::post('/approvalLV', [LeaveController::class, 'approval']);
 Route::post('/leaveTypes', [LeaveController::class, 'leaveTypes']);
 Route::post('/cancelLV', [LeaveController::class, 'cancel']);
+Route::post('/getLVInquiry', [LeaveController::class, 'getInquiry']);
 
 
 
