@@ -45,22 +45,37 @@ Route::get('/debug-user-model', function () {
 // });
 
 
+// Route::get('/server-time', function () {
+//     return response()->json([
+//         'serverTime' => now('Asia/Manila')->toIso8601String(),
+//         'timezone'   => 'Asia/Manila',
+//         'timestamp'  => now('Asia/Manila')->timestamp,
+//     ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+// });
+
 Route::get('/server-time', function () {
     return response()->json([
         'serverTime' => now('Asia/Manila')->toIso8601String(),
         'timezone'   => 'Asia/Manila',
         'timestamp'  => now('Asia/Manila')->timestamp,
     ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-});
+})->withoutMiddleware('throttle:api');
 
 
 Route::get('/me', [AuthController::class, 'me']);
-Route::post('/loginDB', [AuthController::class, 'loginDB'])->middleware('throttle:login');
+
+Route::post('/loginDB', [AuthController::class, 'loginDB'])
+    ->withoutMiddleware('throttle:api')
+    ->middleware('throttle:login');
+
+Route::post('/loginEmp', [RegisterController::class, 'loginEmp'])
+    ->withoutMiddleware('throttle:api')
+    ->middleware('throttle:login');
+
 
 Route::post('/dashBoard', [DashBoardController::class, 'index']);
 Route::post('/regEmp', [RegisterController::class, 'regEmp']);
 Route::post('/getDTR', [DashBoardController::class, 'getDTR']);
-Route::post('/loginEmp', [RegisterController::class, 'loginEmp'])->middleware('throttle:login');
 
 
 Route::post('/getLVApprInq', [LeaveController::class, 'getApprInq']);
