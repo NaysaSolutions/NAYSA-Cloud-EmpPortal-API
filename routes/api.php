@@ -117,7 +117,7 @@ Route::get('/reports/payslipLV', [ReportController::class, 'payslipReport_LV']);
 Route::get('/reports/payslipLN', [ReportController::class, 'payslipReport_LN']);
 Route::get('/reports/payslipYTD', [ReportController::class, 'payslipReport_YTD']);
 Route::get('/reports/payslipCutoff', [ReportController::class, 'payslipReport_Cutoff']);
-
+Route::get('/reports/payslipRange', [ReportController::class, 'payslipReportRange']);
 
 
 // Route::post('/upsertTimeIn', [TimekeepingController::class, 'upsertTimeIn']);
