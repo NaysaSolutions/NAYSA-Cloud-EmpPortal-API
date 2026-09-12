@@ -9,6 +9,7 @@ use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\TimekeepingController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\FaceIOController;
+use App\Http\Controllers\EmployeeShiftController;
 use Illuminate\Support\Facades\Route;
 use Carbon\Carbon;
 /*
@@ -165,6 +166,14 @@ Route::get('/getDTROffset/{empNo}/{startDate}/{endDate}',[OffsetController::clas
 Route::post('/getOffsetApprInq', [OffsetController::class, 'getOffsetApprInq']);
 Route::post('/getOffsetApprHistory', [OffsetController::class, 'getOffsetApprHistory']);
 Route::post('/approvalOffset', [OffsetController::class, 'approval']);
+
+Route::post('/employeeShifts', [EmployeeShiftController::class, 'employeeShifts']);
+Route::post('/shiftCodes', [EmployeeShiftController::class, 'shiftCodes']);
+Route::post('/uploadEmployeeShifts', [EmployeeShiftController::class, 'uploadEmployeeShifts']);
+Route::post('/upsertShiftChange', [EmployeeShiftController::class, 'upsertShiftChange']);
+Route::post('/getShiftChangeApprInq', [EmployeeShiftController::class, 'shiftChangeApprovalInquiry']);
+Route::post('/getShiftChangeApprHistory', [EmployeeShiftController::class, 'shiftChangeApprovalHistory']);
+Route::post('/approvalShiftChange', [EmployeeShiftController::class, 'approvalShiftChange']);
 
 
 use Illuminate\Support\Facades\DB;
