@@ -16,14 +16,18 @@ class EmployeeShiftController extends Controller
             'EMP_NO' => 'required|string',
             'START_DATE' => 'required|date_format:Y-m-d',
             'END_DATE' => 'required|date_format:Y-m-d|after_or_equal:START_DATE',
-            'ALL' => 'nullable|string|in:Y,N,y,n',
+            'VIEW' => 'nullable|string|in:MY,EMPLOYEE',
+            'HR_FLAG' => 'nullable|string|in:Y,N,y,n,1,0',
+            'APPROVER' => 'nullable|string|in:Y,N,y,n,1,0',
         ]);
 
         return $this->query('Inquiry', [
             $validated['EMP_NO'],
             $validated['START_DATE'],
             $validated['END_DATE'],
-            strtoupper($validated['ALL'] ?? 'N'),
+            strtoupper($validated['VIEW'] ?? 'MY'),
+            strtoupper($validated['HR_FLAG'] ?? 'N'),
+            strtoupper($validated['APPROVER'] ?? 'N'),
         ]);
     }
 
@@ -32,15 +36,28 @@ class EmployeeShiftController extends Controller
         return $this->query('ShiftCodes');
     }
 
+    public function employeeShiftTemplateData(Request $request)
+    {
+        $request->validate([
+            'EMP_NO' => 'required|string',
+        ]);
+
+        return $this->query('TemplateData');
+    }
+
     public function uploadEmployeeShifts(Request $request)
     {
         $validated = $request->validate([
             'empNo' => 'required|string',
             'detail' => 'required|array|min:1',
+
+            // Only these six fields are accepted from Sheet1.
             'detail.*.empNo' => 'required|string',
-            'detail.*.shiftDate' => 'required|date_format:Y-m-d',
+            'detail.*.cutOff' => 'required|string',
+            'detail.*.date' => 'required|date_format:Y-m-d',
+            'detail.*.rd' => 'nullable|string|max:1',
             'detail.*.shiftCode' => 'nullable|string',
-            'detail.*.rd' => 'nullable',
+            'detail.*.workHrs' => 'required|numeric|min:0',
         ]);
 
         try {
@@ -145,7 +162,7 @@ class EmployeeShiftController extends Controller
         try {
             $sql = 'EXEC '.self::SPROC.' @mode = ?';
             if ($mode === 'Inquiry') {
-                $sql .= ', @emp = ?, @startdate = ?, @enddate = ?, @all = ?';
+                $sql .= ', @emp = ?, @startdate = ?, @enddate = ?, @view = ?, @hrflag = ?, @approver = ?';
             } elseif ($mode === 'ApprInq') {
                 $sql .= ', @emp = ?';
             } elseif ($mode === 'ApprHistory') {

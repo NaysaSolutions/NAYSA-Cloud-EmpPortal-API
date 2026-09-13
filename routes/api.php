@@ -167,8 +167,10 @@ Route::post('/getOffsetApprInq', [OffsetController::class, 'getOffsetApprInq']);
 Route::post('/getOffsetApprHistory', [OffsetController::class, 'getOffsetApprHistory']);
 Route::post('/approvalOffset', [OffsetController::class, 'approval']);
 
+// Employee Shift / Shift Change
 Route::post('/employeeShifts', [EmployeeShiftController::class, 'employeeShifts']);
 Route::post('/shiftCodes', [EmployeeShiftController::class, 'shiftCodes']);
+Route::post('/employeeShiftTemplateData', [EmployeeShiftController::class, 'employeeShiftTemplateData']);
 Route::post('/uploadEmployeeShifts', [EmployeeShiftController::class, 'uploadEmployeeShifts']);
 Route::post('/upsertShiftChange', [EmployeeShiftController::class, 'upsertShiftChange']);
 Route::post('/getShiftChangeApprInq', [EmployeeShiftController::class, 'shiftChangeApprovalInquiry']);
