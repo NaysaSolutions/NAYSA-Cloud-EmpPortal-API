@@ -98,7 +98,15 @@ class AuthController extends Controller
         ->select(
             'empno',
             'emp_name',
-            DB::raw("ISNULL(hr_flag, 'N') as hr_flag")
+            DB::raw("ISNULL(hr_flag, 'N') as hr_flag"),
+            DB::raw("ISNULL(approver, 0) as approver"),
+            DB::raw("ISNULL(PORTAL_DTR, 'N') as portalDTR"),
+            DB::raw("ISNULL(PORTAL_DTRCONFIRM, 'N') as portalDTRConfirm"),
+            DB::raw("ISNULL(PORTAL_TK, 'N') as portalTK"),
+            DB::raw("ISNULL(PORTAL_LV, 'N') as portalLV"),
+            DB::raw("ISNULL(PORTAL_OB, 'N') as portalOB"),
+            DB::raw("ISNULL(PORTAL_OT, 'N') as portalOT"),
+            DB::raw("ISNULL(PORTAL_OFFSET, 'N') as portalOffSet")
         )
         ->where('empno', $user->userId)
         ->first();
@@ -118,6 +126,14 @@ class AuthController extends Controller
             'empName' => $employee->emp_name ?? $user->username,
             'hr_flag' => $employee->hr_flag ?? 'N',
             'hrFlag' => $employee->hr_flag ?? 'N',
+            'approver' => $employee->approver ?? 0,
+            'portalDTR' => $employee->portalDTR ?? 'N',
+            'portalDTRConfirm' => $employee->portalDTRConfirm ?? 'N',
+            'portalTK' => $employee->portalTK ?? 'N',
+            'portalLV' => $employee->portalLV ?? 'N',
+            'portalOB' => $employee->portalOB ?? 'N',
+            'portalOT' => $employee->portalOT ?? 'N',
+            'portalOffSet' => $employee->portalOffSet ?? 'N',   
         ],
     ]);
 }
@@ -212,7 +228,15 @@ public function me(Request $request)
         ->select(
             'empno',
             'emp_name',
-            DB::raw("ISNULL(hr_flag, 'N') as hr_flag")
+            DB::raw("ISNULL(hr_flag, 'N') as hr_flag"),
+            DB::raw("ISNULL(approver, 0) as approver"),
+            DB::raw("ISNULL(PORTAL_DTR, 'N') as portalDTR"),
+            DB::raw("ISNULL(PORTAL_DTRCONFIRM, 'N') as portalDTRConfirm"),
+            DB::raw("ISNULL(PORTAL_TK, 'N') as portalTK"),
+            DB::raw("ISNULL(PORTAL_LV, 'N') as portalLV"),
+            DB::raw("ISNULL(PORTAL_OB, 'N') as portalOB"),
+            DB::raw("ISNULL(PORTAL_OT, 'N') as portalOT"),
+            DB::raw("ISNULL(PORTAL_OFFSET, 'N') as portalOffSet")
         )
         ->where('empno', $user->userId)
         ->first();
@@ -231,6 +255,14 @@ public function me(Request $request)
             'empName' => $employee->emp_name ?? $user->username,
             'hr_flag' => $employee->hr_flag ?? 'N',
             'hrFlag' => $employee->hr_flag ?? 'N',
+            'approver' => $employee->approver ?? 0,
+            'portalDTR' => $employee->portalDTR ?? 'N',
+            'portalDTRConfirm' => $employee->portalDTRConfirm ?? 'N',
+            'portalTK' => $employee->portalTK ?? 'N',
+            'portalLV' => $employee->portalLV ?? 'N',
+            'portalOB' => $employee->portalOB ?? 'N',
+            'portalOT' => $employee->portalOT ?? 'N',
+            'portalOffSet' => $employee->portalOffSet ?? 'N',
         ],
     ]);
 }

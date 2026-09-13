@@ -10,6 +10,7 @@ use App\Http\Controllers\TimekeepingController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\FaceIOController;
 use App\Http\Controllers\EmployeeShiftController;
+use App\Http\Controllers\EmployeeAccessSettingsController;
 use Illuminate\Support\Facades\Route;
 use Carbon\Carbon;
 /*
@@ -177,6 +178,9 @@ Route::post('/getShiftChangeApprInq', [EmployeeShiftController::class, 'shiftCha
 Route::post('/getShiftChangeApprHistory', [EmployeeShiftController::class, 'shiftChangeApprovalHistory']);
 Route::post('/approvalShiftChange', [EmployeeShiftController::class, 'approvalShiftChange']);
 
+
+Route::get('/employeePortalSettings', [EmployeeAccessSettingsController::class, 'index']);
+Route::post('/updateEmployeePortalSettings', [EmployeeAccessSettingsController::class, 'update']);
 
 use Illuminate\Support\Facades\DB;
 
