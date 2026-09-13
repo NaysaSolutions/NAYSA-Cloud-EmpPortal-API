@@ -153,6 +153,207 @@ public function getDTR(Request $request) {
 // }
 
 
+    /**
+     * GET /api/announcements
+     * Load active announcements for the dashboard.
+     */
+    public function announcements(Request $request)
+    {
+        try {
+            $results = DB::select(
+                'EXEC dbo.sproc_PHP_EmpInq_Announcement @mode = ?, @params = ?',
+                ['Load', null]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Announcement load error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to load announcements.',
+            ], 500);
+        }
+    }
+
+    /**
+     * POST /api/announcements
+     * Only an employee tagged HR_FLAG = Y may create an announcement.
+     */
+    public function createAnnouncement(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:150',
+            'message' => 'required|string|max:2000',
+            'expirationDate' => 'required|date_format:Y-m-d',
+            'createdBy' => 'required|string|max:50',
+        ]);
+
+        try {
+            // Do not trust hrFlag supplied by the browser.
+            // The stored procedure validates CREATED_BY against PAYMAST.HR_FLAG.
+            $params = json_encode([
+                'title' => trim($validated['title']),
+                'message' => trim($validated['message']),
+                'expirationDate' => $validated['expirationDate'],
+                'createdBy' => trim($validated['createdBy']),
+            ], JSON_UNESCAPED_UNICODE);
+
+            $results = DB::select(
+                'EXEC dbo.sproc_PHP_EmpInq_Announcement @mode = ?, @params = ?',
+                ['Save', $params]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Announcement posted successfully.',
+                'data' => $results[0] ?? null,
+            ], 201);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+
+        } catch (\Throwable $e) {
+            Log::error('Announcement create error', [
+                'createdBy' => $validated['createdBy'] ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            $status = str_contains(strtolower($e->getMessage()), 'authorized')
+                ? 403
+                : 500;
+
+            return response()->json([
+                'success' => false,
+                'message' => $status === 403
+                    ? 'Only HR users can post announcements.'
+                    : 'Unable to post announcement.',
+            ], $status);
+        }
+    }
+
+    /**
+     * PUT /api/announcements/{id}
+     * HR only - update an existing announcement.
+     */
+    public function updateAnnouncement(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:150',
+            'message' => 'required|string|max:2000',
+            'expirationDate' => 'required|date_format:Y-m-d',
+            'updatedBy' => 'required|string|max:50',
+        ]);
+
+        try {
+            $params = json_encode([
+                'announcementId' => (int) $id,
+                'title' => trim($validated['title']),
+                'message' => trim($validated['message']),
+                'expirationDate' => $validated['expirationDate'],
+                'updatedBy' => trim($validated['updatedBy']),
+            ], JSON_UNESCAPED_UNICODE);
+
+            $results = DB::select(
+                'EXEC dbo.sproc_PHP_EmpInq_Announcement @mode = ?, @params = ?',
+                ['Edit', $params]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Announcement updated successfully.',
+                'data' => $results[0] ?? null,
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+
+        } catch (\Throwable $e) {
+            Log::error('Announcement update error', [
+                'announcementId' => $id,
+                'updatedBy' => $validated['updatedBy'] ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            $message = strtolower($e->getMessage());
+
+            $status = str_contains($message, 'authorized')
+                ? 403
+                : (str_contains($message, 'not found') ? 404 : 500);
+
+            return response()->json([
+                'success' => false,
+                'message' => $status === 403
+                    ? 'Only HR users can edit announcements.'
+                    : ($status === 404
+                        ? 'Announcement not found.'
+                        : 'Unable to update announcement.'),
+            ], $status);
+        }
+    }
+
+    /**
+     * DELETE /api/announcements/{id}
+     * HR only - soft delete by setting ACTIVE = N.
+     */
+    public function deleteAnnouncement(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'deletedBy' => 'required|string|max:50',
+        ]);
+
+        try {
+            $params = json_encode([
+                'announcementId' => (int) $id,
+                'deletedBy' => trim($validated['deletedBy']),
+            ], JSON_UNESCAPED_UNICODE);
+
+            DB::select(
+                'EXEC dbo.sproc_PHP_EmpInq_Announcement @mode = ?, @params = ?',
+                ['Delete', $params]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Announcement deleted successfully.',
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+
+        } catch (\Throwable $e) {
+            Log::error('Announcement delete error', [
+                'announcementId' => $id,
+                'deletedBy' => $validated['deletedBy'] ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            $message = strtolower($e->getMessage());
+
+            $status = str_contains($message, 'authorized')
+                ? 403
+                : (str_contains($message, 'not found') ? 404 : 500);
+
+            return response()->json([
+                'success' => false,
+                'message' => $status === 403
+                    ? 'Only HR users can delete announcements.'
+                    : ($status === 404
+                        ? 'Announcement not found.'
+                        : 'Unable to delete announcement.'),
+            ], $status);
+        }
+    }
 
 
 }

@@ -76,6 +76,12 @@ Route::post('/loginEmp', [RegisterController::class, 'loginEmp'])
 
 
 Route::post('/dashBoard', [DashBoardController::class, 'index']);
+Route::get('/announcements', [DashBoardController::class, 'announcements']);
+Route::post('/announcements', [DashBoardController::class, 'createAnnouncement']);
+Route::put('/announcements/{id}', [DashBoardController::class, 'updateAnnouncement']);
+Route::delete('/announcements/{id}', [DashBoardController::class, 'deleteAnnouncement']);
+
+
 Route::post('/regEmp', [RegisterController::class, 'regEmp']);
 Route::post('/getDTR', [DashBoardController::class, 'getDTR']);
 
