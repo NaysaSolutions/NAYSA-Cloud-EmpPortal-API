@@ -8,28 +8,42 @@ use Illuminate\Support\Facades\Log;
 
 class EmployeeShiftController extends Controller
 {
-    private const SPROC = 'sproc_PHP_EmpInq_EmployeeShift';
+    private const SPROC = 'dbo.sproc_PHP_EmpInq_EmployeeShift';
 
-    public function employeeShifts(Request $request)
-    {
-        $validated = $request->validate([
-            'EMP_NO' => 'required|string',
-            'START_DATE' => 'required|date_format:Y-m-d',
-            'END_DATE' => 'required|date_format:Y-m-d|after_or_equal:START_DATE',
-            'VIEW' => 'nullable|string|in:MY,EMPLOYEE',
-            'HR_FLAG' => 'nullable|string|in:Y,N,y,n,1,0',
-            'APPROVER' => 'nullable|string|in:Y,N,y,n,1,0',
-        ]);
+public function employeeShifts(Request $request)
+{
+    /*
+    |--------------------------------------------------------------------------
+    | TEMP DEBUG - MUST BE BEFORE VALIDATION
+    |--------------------------------------------------------------------------
+    */
+    Log::info('Employee Shift RAW Request', [
+        'method' => $request->method(),
+        'content_type' => $request->header('Content-Type'),
+        'all' => $request->all(),
+        'raw' => $request->getContent(),
+    ]);
 
-        return $this->query('Inquiry', [
-            $validated['EMP_NO'],
-            $validated['START_DATE'],
-            $validated['END_DATE'],
-            strtoupper($validated['VIEW'] ?? 'MY'),
-            strtoupper($validated['HR_FLAG'] ?? 'N'),
-            strtoupper($validated['APPROVER'] ?? 'N'),
-        ]);
-    }
+    $validated = $request->validate([
+        'EMP_NO' => 'required|string',
+        'START_DATE' => 'required|date_format:Y-m-d',
+        'END_DATE' => 'required|date_format:Y-m-d|after_or_equal:START_DATE',
+        'VIEW' => 'nullable|string|in:MY,EMPLOYEE',
+        'HR_FLAG' => 'nullable|string|in:Y,N,y,n,1,0',
+        'APPROVER' => 'nullable|string|in:Y,N,y,n,1,0',
+    ]);
+
+    $bindings = [
+        trim($validated['EMP_NO']),
+        $validated['START_DATE'],
+        $validated['END_DATE'],
+        strtoupper($validated['VIEW'] ?? 'MY'),
+        strtoupper($validated['HR_FLAG'] ?? 'N'),
+        strtoupper($validated['APPROVER'] ?? 'N'),
+    ];
+
+    return $this->query('Inquiry', $bindings);
+}
 
     public function shiftCodes()
     {
@@ -157,27 +171,162 @@ class EmployeeShiftController extends Controller
         }
     }
 
-    private function query(string $mode, array $bindings = [])
-    {
-        try {
-            $sql = 'EXEC '.self::SPROC.' @mode = ?';
-            if ($mode === 'Inquiry') {
-                $sql .= ', @emp = ?, @startdate = ?, @enddate = ?, @view = ?, @hrflag = ?, @approver = ?';
-            } elseif ($mode === 'ApprInq') {
-                $sql .= ', @emp = ?';
-            } elseif ($mode === 'ApprHistory') {
-                $sql .= ', @emp = ?, @startdate = ?, @enddate = ?';
+private function query(string $mode, array $bindings = [])
+{
+    try {
+
+        switch ($mode) {
+
+            case 'Inquiry':
+                $sql = '
+                    EXEC '.self::SPROC.'
+                        @mode = ?,
+                        @params = NULL,
+                        @emp = ?,
+                        @startdate = ?,
+                        @enddate = ?,
+                        @view = ?,
+                        @hrflag = ?,
+                        @approver = ?
+                ';
+                break;
+
+            case 'ApprInq':
+                $sql = '
+                    EXEC '.self::SPROC.'
+                        @mode = ?,
+                        @params = NULL,
+                        @emp = ?
+                ';
+                break;
+
+            case 'ApprHistory':
+                $sql = '
+                    EXEC '.self::SPROC.'
+                        @mode = ?,
+                        @params = NULL,
+                        @emp = ?,
+                        @startdate = ?,
+                        @enddate = ?
+                ';
+                break;
+
+            case 'TemplateData':
+            case 'ShiftCodes':
+                $sql = '
+                    EXEC '.self::SPROC.'
+                        @mode = ?,
+                        @params = NULL
+                ';
+                break;
+
+            default:
+                throw new \Exception(
+                    "Unsupported query mode: {$mode}"
+                );
+        }
+
+        $params = array_merge([$mode], $bindings);
+
+        Log::info('Employee Shift SP Request', [
+            'mode' => $mode,
+            'bindings' => $params,
+        ]);
+
+        $result = DB::select($sql, $params);
+
+        /*
+        |--------------------------------------------------------------------------
+        | INQUIRY
+        | Stored procedure returns normal SQL rows.
+        |--------------------------------------------------------------------------
+        */
+        if ($mode === 'Inquiry') {
+
+            Log::info('Employee Shift Inquiry Result', [
+                'rowCount' => count($result),
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'success' => true,
+                'data' => array_map(
+                    static fn ($row) => (array) $row,
+                    $result
+                ),
+            ]);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Other modes currently return JSON in column [result]
+        |--------------------------------------------------------------------------
+        */
+        if (empty($result)) {
+            return response()->json([
+                'status' => 'success',
+                'success' => true,
+                'data' => [],
+            ]);
+        }
+
+        $row = $result[0];
+
+        $raw = $row->result
+            ?? $row->RESULT
+            ?? $row->Result
+            ?? null;
+
+        if (is_resource($raw)) {
+            rewind($raw);
+            $raw = stream_get_contents($raw);
+        }
+
+        if ($raw === null || $raw === '') {
+            return response()->json([
+                'status' => 'success',
+                'success' => true,
+                'data' => [],
+            ]);
+        }
+
+        if (is_string($raw)) {
+
+            $data = json_decode($raw, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \Exception(
+                    'Invalid JSON returned by stored procedure: ' .
+                    json_last_error_msg()
+                );
             }
 
-            $result = DB::select($sql, array_merge([$mode], $bindings));
-            $raw = $result[0]->result ?? null;
-            $data = is_string($raw) ? (json_decode($raw, true) ?: []) : ($raw ?: $result);
-
-            return response()->json(['status' => 'success', 'success' => true, 'data' => $data]);
-        } catch (\Throwable $e) {
-            return $this->failure('Unable to retrieve employee shift data.', $e);
+        } else {
+            $data = $raw;
         }
+
+        return response()->json([
+            'status' => 'success',
+            'success' => true,
+            'data' => $data ?? [],
+        ]);
+
+    } catch (\Throwable $e) {
+
+        Log::error('Employee Shift Query Failed', [
+            'mode' => $mode,
+            'bindings' => $bindings,
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ]);
+
+        return $this->failure(
+            'Unable to retrieve employee shift data.',
+            $e
+        );
     }
+}
 
     private function failure(string $message, \Throwable $e)
     {
