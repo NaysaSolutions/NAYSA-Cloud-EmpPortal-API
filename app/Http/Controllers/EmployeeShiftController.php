@@ -30,6 +30,8 @@ public function employeeShifts(Request $request)
         'END_DATE' => 'required|date_format:Y-m-d|after_or_equal:START_DATE',
         'VIEW' => 'nullable|string|in:MY,EMPLOYEE',
         'HR_FLAG' => 'nullable|string|in:Y,N,y,n,1,0',
+        'MGR_FLAG' => 'nullable|string|in:Y,N,y,n,1,0',
+        'SUP_FLAG' => 'nullable|string|in:Y,N,y,n,1,0',
         'APPROVER' => 'nullable|string|in:Y,N,y,n,1,0',
     ]);
 
@@ -39,6 +41,8 @@ public function employeeShifts(Request $request)
         $validated['END_DATE'],
         strtoupper($validated['VIEW'] ?? 'MY'),
         strtoupper($validated['HR_FLAG'] ?? 'N'),
+        strtoupper($validated['MGR_FLAG'] ?? 'N'),
+        strtoupper($validated['SUP_FLAG'] ?? 'N'),
         strtoupper($validated['APPROVER'] ?? 'N'),
     ];
 
@@ -187,6 +191,8 @@ private function query(string $mode, array $bindings = [])
                         @enddate = ?,
                         @view = ?,
                         @hrflag = ?,
+                        @mgrflag = ?,
+                        @supflag = ?,
                         @approver = ?
                 ';
                 break;
