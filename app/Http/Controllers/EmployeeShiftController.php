@@ -56,11 +56,21 @@ public function employeeShifts(Request $request)
 
     public function employeeShiftTemplateData(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'EMP_NO' => 'required|string',
+            'HR_FLAG' => 'nullable|string|in:Y,N,y,n,1,0',
+            'MGR_FLAG' => 'nullable|string|in:Y,N,y,n,1,0',
+            'SUP_FLAG' => 'nullable|string|in:Y,N,y,n,1,0',
+            'APPROVER' => 'nullable|string|in:Y,N,y,n,1,0',
         ]);
 
-        return $this->query('TemplateData');
+        return $this->query('TemplateData', [
+            trim($validated['EMP_NO']),
+            strtoupper($validated['HR_FLAG'] ?? 'N'),
+            strtoupper($validated['MGR_FLAG'] ?? 'N'),
+            strtoupper($validated['SUP_FLAG'] ?? 'N'),
+            strtoupper($validated['APPROVER'] ?? 'N'),
+        ]);
     }
 
     public function uploadEmployeeShifts(Request $request)
@@ -218,6 +228,18 @@ private function query(string $mode, array $bindings = [])
                 break;
 
             case 'TemplateData':
+                $sql = '
+                    EXEC '.self::SPROC.'
+                        @mode = ?,
+                        @params = NULL,
+                        @emp = ?,
+                        @hrflag = ?,
+                        @mgrflag = ?,
+                        @supflag = ?,
+                        @approver = ?
+                ';
+                break;
+
             case 'ShiftCodes':
                 $sql = '
                     EXEC '.self::SPROC.'

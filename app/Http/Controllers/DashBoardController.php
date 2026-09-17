@@ -155,14 +155,22 @@ public function getDTR(Request $request) {
 
     /**
      * GET /api/announcements
-     * Load active announcements for the dashboard.
+     * Load only the announcements visible to the logged-in employee.
      */
     public function announcements(Request $request)
     {
+        $validated = $request->validate([
+            'EMP_NO' => 'required|string|max:50',
+        ]);
+
         try {
+            $params = json_encode([
+                'viewerEmpNo' => trim($validated['EMP_NO']),
+            ], JSON_UNESCAPED_UNICODE);
+
             $results = DB::select(
                 'EXEC dbo.sproc_PHP_EmpInq_Announcement @mode = ?, @params = ?',
-                ['Load', null]
+                ['Load', $params]
             );
 
             return response()->json([
@@ -170,8 +178,12 @@ public function getDTR(Request $request) {
                 'data' => $results,
             ], 200);
 
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+
+        } catch (\Throwable $e) {
             Log::error('Announcement load error', [
+                'viewerEmpNo' => $validated['EMP_NO'] ?? null,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -185,7 +197,8 @@ public function getDTR(Request $request) {
 
     /**
      * POST /api/announcements
-     * Only an employee tagged HR_FLAG = Y may create an announcement.
+     * HR, Manager, or Supervisor may create an announcement.
+     * The stored procedure validates the employee's actual PAYMAST flags.
      */
     public function createAnnouncement(Request $request)
     {
@@ -194,16 +207,16 @@ public function getDTR(Request $request) {
             'message' => 'required|string|max:2000',
             'expirationDate' => 'required|date_format:Y-m-d',
             'createdBy' => 'required|string|max:50',
+            'visibilityScope' => 'nullable|string|in:ALL,TEAM',
         ]);
 
         try {
-            // Do not trust hrFlag supplied by the browser.
-            // The stored procedure validates CREATED_BY against PAYMAST.HR_FLAG.
             $params = json_encode([
                 'title' => trim($validated['title']),
                 'message' => trim($validated['message']),
                 'expirationDate' => $validated['expirationDate'],
                 'createdBy' => trim($validated['createdBy']),
+                'visibilityScope' => strtoupper(trim($validated['visibilityScope'] ?? '')),
             ], JSON_UNESCAPED_UNICODE);
 
             $results = DB::select(
@@ -223,18 +236,23 @@ public function getDTR(Request $request) {
         } catch (\Throwable $e) {
             Log::error('Announcement create error', [
                 'createdBy' => $validated['createdBy'] ?? null,
+                'visibilityScope' => $validated['visibilityScope'] ?? null,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            $status = str_contains(strtolower($e->getMessage()), 'authorized')
-                ? 403
-                : 500;
+            $message = strtolower($e->getMessage());
+            $status = (
+                str_contains($message, 'authorized') ||
+                str_contains($message, 'only hr') ||
+                str_contains($message, 'require manager') ||
+                str_contains($message, 'require supervisor')
+            ) ? 403 : 500;
 
             return response()->json([
                 'success' => false,
                 'message' => $status === 403
-                    ? 'Only HR users can post announcements.'
+                    ? 'Only HR, Managers, or Supervisors may post announcements for their permitted audience.'
                     : 'Unable to post announcement.',
             ], $status);
         }
@@ -242,7 +260,7 @@ public function getDTR(Request $request) {
 
     /**
      * PUT /api/announcements/{id}
-     * HR only - update an existing announcement.
+     * Only the employee who created the announcement may edit it.
      */
     public function updateAnnouncement(Request $request, $id)
     {
@@ -285,15 +303,14 @@ public function getDTR(Request $request) {
             ]);
 
             $message = strtolower($e->getMessage());
-
-            $status = str_contains($message, 'authorized')
+            $status = str_contains($message, 'created this announcement')
                 ? 403
                 : (str_contains($message, 'not found') ? 404 : 500);
 
             return response()->json([
                 'success' => false,
                 'message' => $status === 403
-                    ? 'Only HR users can edit announcements.'
+                    ? 'Only the employee who created this announcement can edit it.'
                     : ($status === 404
                         ? 'Announcement not found.'
                         : 'Unable to update announcement.'),
@@ -303,7 +320,7 @@ public function getDTR(Request $request) {
 
     /**
      * DELETE /api/announcements/{id}
-     * HR only - soft delete by setting ACTIVE = N.
+     * Only the employee who created the announcement may soft-delete it.
      */
     public function deleteAnnouncement(Request $request, $id)
     {
@@ -339,15 +356,14 @@ public function getDTR(Request $request) {
             ]);
 
             $message = strtolower($e->getMessage());
-
-            $status = str_contains($message, 'authorized')
+            $status = str_contains($message, 'created this announcement')
                 ? 403
                 : (str_contains($message, 'not found') ? 404 : 500);
 
             return response()->json([
                 'success' => false,
                 'message' => $status === 403
-                    ? 'Only HR users can delete announcements.'
+                    ? 'Only the employee who created this announcement can delete it.'
                     : ($status === 404
                         ? 'Announcement not found.'
                         : 'Unable to delete announcement.'),
