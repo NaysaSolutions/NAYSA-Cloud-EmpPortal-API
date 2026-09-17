@@ -279,4 +279,33 @@ public function me(Request $request)
     ]);
 }
 
+
+public function getCompanyName()
+{
+    try {
+        $record = DB::selectOne("
+            SELECT TOP 1
+                LTRIM(RTRIM(ISNULL(company, ''))) AS company
+            FROM payparm
+            WHERE ISNULL(LTRIM(RTRIM(company)), '') <> ''
+        ");
+
+        return response()->json([
+            'status' => 'success',
+            'companyName' => $record->company ?? 'Employee Portal',
+        ]);
+
+    } catch (\Throwable $e) {
+        Log::error('Unable to load company name', [
+            'message' => $e->getMessage(),
+        ]);
+
+        return response()->json([
+            'status' => 'error',
+            'companyName' => 'Employee Portal',
+            'message' => 'Unable to load company information.',
+        ], 500);
+    }
+}
+
 }

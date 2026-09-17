@@ -74,6 +74,7 @@ Route::post('/loginEmp', [RegisterController::class, 'loginEmp'])
     ->withoutMiddleware('throttle:api')
     ->middleware('throttle:login');
 
+Route::get('/company-name', [AuthController::class, 'getCompanyName']);
 
 Route::post('/dashBoard', [DashBoardController::class, 'index']);
 Route::get('/announcements', [DashBoardController::class, 'announcements']);
