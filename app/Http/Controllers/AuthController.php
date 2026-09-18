@@ -97,7 +97,8 @@ class AuthController extends Controller
     $employee = DB::table('paymast')
         ->select(
             'empno',
-            'emp_name',
+            // 'emp_name',
+            DB::raw("concat(firstn,' ',lastn) as emp_name"),
             DB::raw("ISNULL(hr_flag, 'N') as hr_flag"),
             DB::raw("ISNULL(mgr_flag, 'N') as mgr_flag"),
             DB::raw("ISNULL(sup_flag, 'N') as sup_flag"),
@@ -233,7 +234,8 @@ public function me(Request $request)
     $employee = DB::table('paymast')
         ->select(
             'empno',
-            'emp_name',
+            // 'emp_name',
+            DB::raw("concat(firstn,' ',lastn) as emp_name"),
             DB::raw("ISNULL(hr_flag, 'N') as hr_flag"),
             DB::raw("ISNULL(mgr_flag, 'N') as mgr_flag"),
             DB::raw("ISNULL(sup_flag, 'N') as sup_flag"),
